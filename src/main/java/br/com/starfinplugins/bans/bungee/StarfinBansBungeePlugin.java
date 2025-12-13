@@ -39,6 +39,7 @@ public class StarfinBansBungeePlugin extends Plugin {
     private boolean licensed = false;
 
     private static final String STARFIN_PRODUCT_ID = "starfin_bans";
+    private static final String STARFIN_KEY = "sf_9A7dF2KXQm8LrT6WZC4H1JY0bE5pVNUaS3xMOkcRDiGqPwfheI";
 
     @Override
     public void onEnable() {
