@@ -1,4 +1,4 @@
-package br.com.starfinplugins.bans.service;
+package br.com.starfinplugins.bans.bungee.service;
 
 import br.com.starfinplugins.bans.bungee.api.PunishmentAPI;
 import br.com.starfinplugins.bans.bungee.StarfinBansBungeePlugin;

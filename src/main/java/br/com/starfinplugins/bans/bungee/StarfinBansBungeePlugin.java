@@ -8,7 +8,7 @@ import br.com.starfinplugins.bans.bungee.storage.SQLitePunishmentStorageBungee;
 import br.com.starfinplugins.bans.bungee.util.ConfigUtil;
 import br.com.starfinplugins.bans.bungee.util.MessageUtil;
 import br.com.starfinplugins.bans.bungee.web.WebIntegrationService;
-import br.com.starfinplugins.bans.service.PunishmentManager;
+import br.com.starfinplugins.bans.bungee.service.PunishmentManager;
 
 // ✅ IMPORT DO CORE (não do bungee)
 import br.com.starfinplugins.bans.bungee.storage.PunishmentStorage;

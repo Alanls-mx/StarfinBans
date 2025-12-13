@@ -7,6 +7,7 @@ import br.com.starfinplugins.bans.bungee.util.TextUtil;
 
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 import java.util.List;
 
@@ -37,7 +38,7 @@ public class DupeIpCommand extends AbstractCommand {
 
             DupeLookupStorage dupeStorage = (DupeLookupStorage) plugin.getStorage();
 
-            var p = CmdUtil.online(input);
+            ProxiedPlayer p = CmdUtil.online(input);
             if (p != null) {
                 ip = p.getAddress().getAddress().getHostAddress();
             } else if (!CmdUtil.looksLikeIp(ip)) {
@@ -60,7 +61,7 @@ public class DupeIpCommand extends AbstractCommand {
             }
 
             for (String alt : alts) {
-                var altP = CmdUtil.online(alt);
+                ProxiedPlayer altP = CmdUtil.online(alt);
                 boolean onlineAlt = altP != null;
                 String status = onlineAlt ? "§aOnline" : "§cOffline";
 
