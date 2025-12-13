@@ -4,6 +4,7 @@ import com.starfinplugins.bans.StarfinBansPlugin;
 import com.starfinplugins.bans.model.Punishment;
 import com.starfinplugins.bans.model.PunishmentType;
 import com.starfinplugins.bans.util.TimeUtil;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -68,6 +69,10 @@ public class PunishmentListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onChat(AsyncPlayerChatEvent event) {
+        if (handleChatGuardian(event)) {
+            return;
+        }
+
         // 1. Verifica Mute por UUID
         Punishment mute = plugin.getStorage().getActiveMute(event.getPlayer().getUniqueId());
 
@@ -96,6 +101,84 @@ public class PunishmentListener implements Listener {
                     .replace("%expires%", duration)
                     .replace("%staff%", mute.getStaffName())
             );
+        }
+    }
+
+    private boolean handleChatGuardian(AsyncPlayerChatEvent event) {
+        FileConfiguration cfg = plugin.getConfig();
+        if (cfg == null || !cfg.getBoolean("chat-guardian.enabled", false)) {
+            return false;
+        }
+
+        String message = event.getMessage();
+        if (message == null) {
+            return false;
+        }
+
+        String lower = message.toLowerCase();
+        boolean matched = false;
+        for (String phrase : cfg.getStringList("chat-guardian.blocked-phrases")) {
+            if (phrase == null || phrase.trim().isEmpty()) continue;
+            if (lower.contains(phrase.toLowerCase())) {
+                matched = true;
+                break;
+            }
+        }
+
+        if (!matched) {
+            return false;
+        }
+
+        event.setCancelled(true);
+
+        String staffName = cfg.getString("chat-guardian.staff-name", "StarfinAI");
+        String reason = cfg.getString("chat-guardian.punishment.reason", "Linguagem proibida no chat");
+        String typeKey = cfg.getString("chat-guardian.punishment.type", "tempmute");
+        String durationStr = cfg.getString("chat-guardian.punishment.duration", "30m");
+        long durationMs = TimeUtil.parseDuration(durationStr);
+        Long duration = durationMs > 0 ? durationMs : null;
+
+        PunishmentType type = resolvePunishmentType(typeKey);
+
+        plugin.getPunishmentAPI().punish(
+                event.getPlayer().getUniqueId(),
+                event.getPlayer().getName(),
+                event.getPlayer().getAddress().getAddress().getHostAddress(),
+                null,
+                staffName,
+                type,
+                reason,
+                duration
+        );
+
+        String durationText = duration != null ? TimeUtil.formatDuration(duration) : "Permanente";
+        event.getPlayer().sendMessage(plugin.getMessageUtil().get("chat-guardian.blocked"));
+        event.getPlayer().sendMessage(plugin.getMessageUtil().get("chat-guardian.punished")
+                .replace("%reason%", reason)
+                .replace("%duration%", durationText)
+        );
+        return true;
+    }
+
+    private PunishmentType resolvePunishmentType(String raw) {
+        if (raw == null) {
+            return PunishmentType.MUTE_TEMPORARY;
+        }
+        String key = raw.toLowerCase();
+        switch (key) {
+            case "ban":
+            case "permanentban":
+                return PunishmentType.BAN_PERMANENT;
+            case "tempban":
+            case "ban_temp":
+                return PunishmentType.BAN_TEMPORARY;
+            case "mute":
+            case "permanentmute":
+                return PunishmentType.MUTE_PERMANENT;
+            case "tempmute":
+            case "mute_temp":
+            default:
+                return PunishmentType.MUTE_TEMPORARY;
         }
     }
 }

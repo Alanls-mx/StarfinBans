@@ -31,3 +31,14 @@ options:
 vault:
   use-permissions: true
   use-economy: false
+
+chat-guardian:
+  enabled: true
+  staff-name: "StarfinAI"
+  blocked-phrases:
+    - "palavrão"
+    - "ofensa"
+  punishment:
+    type: "tempmute" # ban, tempban, mute, tempmute
+    duration: "30m"
+    reason: "Linguagem proibida no chat (IA)"

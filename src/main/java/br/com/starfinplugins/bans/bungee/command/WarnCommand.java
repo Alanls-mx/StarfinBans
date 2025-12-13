@@ -7,6 +7,7 @@ import br.com.starfinplugins.bans.bungee.util.TextUtil;
 
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 import java.util.Arrays;
 
@@ -28,7 +29,7 @@ public class WarnCommand extends AbstractCommand {
         String targetName = args[0];
         String reason = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
 
-        var online = CmdUtil.online(targetName);
+        ProxiedPlayer online = CmdUtil.online(targetName);
 
         boolean allowOffline = plugin.getCfg().getBoolean("options.allow-offline-punish", true);
         if (online == null && !allowOffline) {

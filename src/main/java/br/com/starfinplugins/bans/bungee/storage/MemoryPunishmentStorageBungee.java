@@ -11,7 +11,7 @@ public class MemoryPunishmentStorageBungee implements PunishmentStorage {
 
     private final List<Punishment> punishments = new CopyOnWriteArrayList<>();
 
-    @Override public void init() {}
+    @Override public boolean init() { return true; }
     @Override public void close() {}
 
     @Override
@@ -55,6 +55,17 @@ public class MemoryPunishmentStorageBungee implements PunishmentStorage {
     }
 
     @Override
+    public void expireAllPunishmentsByIp(String ip, UUID staff, String staffName) {
+        for (Punishment p : punishments) {
+            if (p.isActive()
+                    && p.getIp() != null
+                    && p.getIp().equals(ip)) {
+                p.setActive(false);
+            }
+        }
+    }
+
+    @Override
     public Punishment getActiveBan(UUID target) {
         return punishments.stream()
                 .filter(p -> p.isActive()
@@ -71,6 +82,26 @@ public class MemoryPunishmentStorageBungee implements PunishmentStorage {
                         && p.getTarget() != null
                         && p.getTarget().equals(target)
                         && p.getType().name().startsWith("MUTE"))
+                .findFirst().orElse(null);
+    }
+
+    @Override
+    public Punishment getActiveIpBan(String ip) {
+        return punishments.stream()
+                .filter(p -> p.isActive()
+                        && p.getIp() != null
+                        && p.getIp().equals(ip)
+                        && p.getType().name().startsWith("BAN_IP"))
+                .findFirst().orElse(null);
+    }
+
+    @Override
+    public Punishment getActiveIpMute(String ip) {
+        return punishments.stream()
+                .filter(p -> p.isActive()
+                        && p.getIp() != null
+                        && p.getIp().equals(ip)
+                        && p.getType().name().startsWith("MUTE_IP"))
                 .findFirst().orElse(null);
     }
 
@@ -114,5 +145,33 @@ public class MemoryPunishmentStorageBungee implements PunishmentStorage {
             }
         }
         return list;
+    }
+
+    @Override
+    public boolean updateReason(UUID punishmentId, String reason) {
+        if (punishmentId == null || reason == null) return false;
+
+        for (int i = 0; i < punishments.size(); i++) {
+            Punishment p = punishments.get(i);
+            if (punishmentId.equals(p.getId())) {
+                boolean active = p.isActive();
+                punishments.set(i, new Punishment(
+                        p.getId(),
+                        p.getTarget(),
+                        p.getPlayerName(),
+                        p.getIp(),
+                        p.getStaff(),
+                        p.getStaffName(),
+                        p.getType(),
+                        reason,
+                        p.getCreatedAt(),
+                        p.getExpires(),
+                        active
+                ));
+                return true;
+            }
+        }
+
+        return false;
     }
 }

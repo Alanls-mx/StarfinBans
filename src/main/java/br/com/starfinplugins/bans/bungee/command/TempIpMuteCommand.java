@@ -8,6 +8,7 @@ import br.com.starfinplugins.bans.bungee.util.TimeUtil;
 
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 import java.util.Arrays;
 
@@ -35,7 +36,7 @@ public class TempIpMuteCommand extends AbstractCommand {
         String ip = target;
         String name = target;
 
-        var online = CmdUtil.online(target);
+        ProxiedPlayer online = CmdUtil.online(target);
         if (online != null) {
             ip = online.getAddress().getAddress().getHostAddress();
             name = online.getName();
@@ -55,7 +56,7 @@ public class TempIpMuteCommand extends AbstractCommand {
                 duration
         );
 
-        for (var p : ProxyServer.getInstance().getPlayers()) {
+        for (ProxiedPlayer p : ProxyServer.getInstance().getPlayers()) {
             String pip = p.getAddress().getAddress().getHostAddress();
             if (ip.equals(pip)) {
                 String muted = plugin.msg().get("target.muted")

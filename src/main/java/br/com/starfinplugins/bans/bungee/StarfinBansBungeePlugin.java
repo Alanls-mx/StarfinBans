@@ -8,13 +8,14 @@ import br.com.starfinplugins.bans.bungee.storage.SQLitePunishmentStorageBungee;
 import br.com.starfinplugins.bans.bungee.util.ConfigUtil;
 import br.com.starfinplugins.bans.bungee.util.MessageUtil;
 import br.com.starfinplugins.bans.bungee.web.WebIntegrationService;
-import br.com.starfinplugins.bans.service.PunishmentManager;
+import br.com.starfinplugins.bans.bungee.service.PunishmentManager;
 
 // ✅ IMPORT DO CORE (não do bungee)
 import br.com.starfinplugins.bans.bungee.storage.PunishmentStorage;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.plugin.PluginManager;
 import net.md_5.bungee.config.Configuration;
@@ -39,6 +40,7 @@ public class StarfinBansBungeePlugin extends Plugin {
     private boolean licensed = false;
 
     private static final String STARFIN_PRODUCT_ID = "starfin_bans";
+    private static final String STARFIN_KEY = "sf_9A7dF2KXQm8LrT6WZC4H1JY0bE5pVNUaS3xMOkcRDiGqPwfheI";
 
     @Override
     public void onEnable() {
@@ -55,6 +57,8 @@ public class StarfinBansBungeePlugin extends Plugin {
                 return;
             }
 
+            sendStartupBanner();
+
             // Storage
             String type = config.getString("storage-type", "sqlite");
             if ("mysql".equalsIgnoreCase(type)) {
@@ -64,7 +68,10 @@ public class StarfinBansBungeePlugin extends Plugin {
             } else {
                 storage = new MemoryPunishmentStorageBungee();
             }
-            storage.init();
+            if (!storage.init()) {
+                getLogger().severe("Falha ao iniciar o armazenamento. Desabilitando StarfinBans.");
+                return;
+            }
 
             // Web
             webIntegration = new WebIntegrationService(this);
@@ -139,6 +146,21 @@ public class StarfinBansBungeePlugin extends Plugin {
     public boolean isLockdown() { return lockdown; }
     public void setLockdown(boolean lockdown) { this.lockdown = lockdown; }
     public boolean isLicensed() { return licensed; }
+
+    private void sendStartupBanner() {
+        String[] lines = new String[] {
+                ChatColor.YELLOW + "=============================================",
+                ChatColor.GOLD + "           StarfinBans v" + getDescription().getVersion(),
+                ChatColor.YELLOW + "      Desenvolvido por StarfinPlugins",
+                ChatColor.YELLOW + "      StarfinBans versão Bungee licenciada e autenticada.",
+                ChatColor.YELLOW + "      Acesse nosso site: https://starfinplugins.com",
+                ChatColor.YELLOW + "============================================="
+        };
+
+        for (String line : lines) {
+            ProxyServer.getInstance().getConsole().sendMessage(new TextComponent(line));
+        }
+    }
 
     // ---------------- License System ----------------
 

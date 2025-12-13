@@ -70,14 +70,52 @@ public class MemoryPunishmentStorage implements PunishmentStorage {
     public void expirePunishment(UUID target, PunishmentType type, UUID staff, String staffName) {
         // Em memória, apenas removemos ou marcamos como inativo (aqui não dá pra mudar o campo final 'active' facilmente sem recriar,
         // mas num banco SQL faríamos um UPDATE. Para simplificar o exemplo em memória:)
-        punishments.removeIf(p -> p.getTarget().equals(target) && p.getType() == type && p.isActive());
+        if (target == null || type == null) return;
+
+        punishments.removeIf(p -> target.equals(p.getTarget()) && p.getType() == type && p.isActive());
+    }
+
+    @Override
+    public void expireAllPunishmentsByIp(String ip, UUID staff, String staffName) {
+        if (ip == null || ip.isEmpty()) return;
+
+        punishments.removeIf(p -> ip.equals(p.getIp()) && p.isActive());
+    }
+
+    @Override
+    public boolean updateReason(UUID punishmentId, String reason) {
+        if (punishmentId == null || reason == null) return false;
+
+        for (int i = 0; i < punishments.size(); i++) {
+            Punishment p = punishments.get(i);
+            if (punishmentId.equals(p.getId())) {
+                punishments.set(i, new Punishment(
+                        p.getId(),
+                        p.getTarget(),
+                        p.getPlayerName(),
+                        p.getIp(),
+                        p.getStaff(),
+                        p.getStaffName(),
+                        p.getType(),
+                        reason,
+                        p.getCreatedAt(),
+                        p.getExpires(),
+                        p.isActive()
+                ));
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
     public String getLastIp(UUID target) {
         // Simplificado
+        if (target == null) return null;
+
         return punishments.stream()
-                .filter(p -> p.getTarget().equals(target))
+                .filter(p -> target.equals(p.getTarget()))
                 .map(Punishment::getIp)
                 .findFirst().orElse(null);
     }

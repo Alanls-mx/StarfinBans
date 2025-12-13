@@ -21,15 +21,19 @@ public interface PunishmentAPI {
 
     void unban(UUID target, UUID staff, String staffName);
     void unbanByName(String targetName, UUID staff, String staffName);
+    void unbanIp(String ip, UUID staff, String staffName);
 
     void unmute(UUID target, UUID staff, String staffName);
     void unmuteByName(String targetName, UUID staff, String staffName);
+    void unmuteIp(String ip, UUID staff, String staffName);
 
     boolean isBanned(UUID target);
     boolean isMuted(UUID target);
 
     Punishment getActiveBan(UUID target);
     Punishment getActiveMute(UUID target);
+    Punishment getActiveIpBan(String ip);
+    Punishment getActiveIpMute(String ip);
 
     Punishment getActiveBanByName(String targetName);
     Punishment getActiveMuteByName(String targetName);

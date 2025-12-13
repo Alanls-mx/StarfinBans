@@ -22,11 +22,13 @@ general:
     warn: "&cUso correto: /warn <jogador> <motivo>"
     unban: "&cUso correto: /unban <jogador>"
     unmute: "&cUso correto: /unmute <jogador>"
+    checkban: "&cUso correto: /checkban <jogador>"
+    checkmute: "&cUso correto: /checkmute <jogador>"
     unwarn: "&cUso correto: /unwarn <jogador>"
     history: "&cUso correto: /history <jogador>"
     dupeip: "&cUso correto: /dupeip <jogador>"
     changereason: "&cUso correto: /changereason <id> <novo motivo>"
-    help: "&cUso correto: /help"
+    help: "&cUso correto: /banshelp"
 
 # Notificações para o Staff (quem aplicou a punição)
 notification:
@@ -54,6 +56,10 @@ target:
     - "&eMotivo: &f%reason%"
     - "&eStaff: &f%staff%"
     - "&8&m------------------------------"
+
+chat-guardian:
+  blocked: "&cSua mensagem foi bloqueada por linguagem proibida."
+  punished: "&cVocê recebeu uma punição automática: %reason% (&f%duration%&c)."
 
 # Layouts de Tela (Kick/Login)
 layouts:
@@ -150,6 +156,7 @@ check:
   header: "&8&m-----&r &eInformações de %player% &8&m-----"
   banned: "&c[BANIDO] &fMotivo: %reason% &7(Por: %staff%)"
   muted: "&c[MUTADO] &fMotivo: %reason% &7(Por: %staff%)"
+  format: "&e%player% &7- &f%type% &7Motivo: &f%reason% &7Staff: &f%staff% &7Duração: &f%duration%"
   clean: "&aO jogador não possui punições ativas deste tipo."
 
 dupeip:

@@ -6,8 +6,10 @@ import br.com.starfinplugins.bans.bungee.model.PunishmentType;
 import br.com.starfinplugins.bans.bungee.storage.PunishmentStorage;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
+import java.util.logging.Level;
 
 public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLookupStorage {
 
@@ -19,7 +21,7 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
     }
 
     @Override
-    public void init() {
+    public boolean init() {
         try {
             File file = new File(plugin.getDataFolder(), "database.db");
             if (!file.exists()) {
@@ -31,8 +33,12 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
             connection = DriverManager.getConnection("jdbc:sqlite:" + file.getAbsolutePath());
             createTables();
 
-        } catch (Exception e) {
-            plugin.getLogger().severe("Falha ao iniciar SQLite: " + e.getMessage());
+            return true;
+
+        } catch (IOException | ClassNotFoundException | SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Falha ao iniciar SQLite", e);
+            close();
+            return false;
         }
     }
 
@@ -97,6 +103,16 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
         return getActivePunishmentByTarget(target, "MUTE");
     }
 
+    @Override
+    public Punishment getActiveIpBan(String ip) {
+        return getActivePunishmentByIp(ip, "BAN_IP");
+    }
+
+    @Override
+    public Punishment getActiveIpMute(String ip) {
+        return getActivePunishmentByIp(ip, "MUTE_IP");
+    }
+
     private Punishment getActivePunishmentByTarget(UUID target, String prefix) {
         if (target == null) return null;
 
@@ -120,6 +136,27 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
             }
         } catch (SQLException e) {
             plugin.getLogger().warning("SQLite getActivePunishmentByTarget: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    private Punishment getActivePunishmentByIp(String ip, String prefix) {
+        if (ip == null || ip.isEmpty()) return null;
+
+        String sql = "SELECT * FROM punishments " +
+                "WHERE ip = ? AND active = 1 AND type LIKE ? " +
+                "ORDER BY created_at DESC LIMIT 1";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, ip);
+            ps.setString(2, prefix + "%");
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return map(rs);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().warning("SQLite getActivePunishmentByIp: " + e.getMessage());
         }
 
         return null;
@@ -252,6 +289,37 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
         } catch (SQLException e) {
             plugin.getLogger().warning("SQLite expireAllPunishmentsByName: " + e.getMessage());
         }
+    }
+
+    @Override
+    public void expireAllPunishmentsByIp(String ip, UUID staff, String staffName) {
+        if (ip == null || ip.isEmpty()) return;
+
+        String sql = "UPDATE punishments SET active = 0 WHERE ip = ? AND active = 1";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, ip);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().warning("SQLite expireAllPunishmentsByIp: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public boolean updateReason(UUID punishmentId, String reason) {
+        if (punishmentId == null || reason == null) return false;
+
+        String sql = "UPDATE punishments SET reason = ? WHERE id = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, reason);
+            ps.setString(2, punishmentId.toString());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().warning("SQLite updateReason: " + e.getMessage());
+        }
+
+        return false;
     }
 
     // ---------------- DUPE LOOKUP (extra, sem quebrar interface) ----------------

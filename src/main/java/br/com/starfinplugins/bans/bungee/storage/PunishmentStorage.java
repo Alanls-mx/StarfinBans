@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public interface PunishmentStorage {
 
-    void init();
+    boolean init();
     void close();
 
     void createPunishment(Punishment punishment);
@@ -18,9 +18,15 @@ public interface PunishmentStorage {
     void expirePunishmentByName(String targetName, PunishmentType type, UUID staff, String staffName);
 
     void expireAllPunishmentsByName(String targetName, UUID staff, String staffName);
+    void expireAllPunishmentsByIp(String ip, UUID staff, String staffName);
+
+    boolean updateReason(UUID punishmentId, String reason);
 
     Punishment getActiveBan(UUID target);
     Punishment getActiveMute(UUID target);
+
+    Punishment getActiveIpBan(String ip);
+    Punishment getActiveIpMute(String ip);
 
     Punishment getActiveBanByName(String targetName);
     Punishment getActiveMuteByName(String targetName);

@@ -55,6 +55,7 @@ public class CheckCommand implements CommandExecutor {
 
                 sender.sendMessage(plugin.getMessageUtil().getRaw("check.format")
                         .replace("%player%", active.getPlayerName())
+                        .replace("%type%", type.toUpperCase())
                         .replace("%reason%", active.getReason())
                         .replace("%staff%", active.getStaffName())
                         .replace("%duration%", duration)

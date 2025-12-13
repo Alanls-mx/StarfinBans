@@ -7,6 +7,7 @@ import br.com.starfinplugins.bans.bungee.util.TextUtil;
 
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 import java.util.Arrays;
 
@@ -26,7 +27,7 @@ public class KickCommand extends AbstractCommand {
         }
 
         String targetName = args[0];
-        var target = CmdUtil.online(targetName);
+        ProxiedPlayer target = CmdUtil.online(targetName);
 
         if (target == null) {
             msg(sender, plugin.msg().get("general.player-not-found").replace("%player%", targetName));
