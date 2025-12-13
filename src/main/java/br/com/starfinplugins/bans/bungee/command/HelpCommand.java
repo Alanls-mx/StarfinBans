@@ -7,7 +7,7 @@ import net.md_5.bungee.api.CommandSender;
 public class HelpCommand extends AbstractCommand {
 
     public HelpCommand(StarfinBansBungeePlugin plugin) {
-        super(plugin, "help", "starfinbans.help");
+        super(plugin, "banshelp", "starfinbans.help");
     }
 
     @Override

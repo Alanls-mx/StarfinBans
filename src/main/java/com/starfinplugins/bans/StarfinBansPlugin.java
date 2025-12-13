@@ -275,7 +275,7 @@ public class StarfinBansPlugin extends JavaPlugin {
         getCommand("dupeip").setExecutor(new DupeIpCommand(this));
         getCommand("changereason").setExecutor(new ChangeReasonCommand(this));
         getCommand("starfinbans").setExecutor(new AdminCommand(this));
-        getCommand("help").setExecutor(new HelpCommand(this));
+        getCommand("banshelp").setExecutor(new HelpCommand(this));
     }
 
     private void setupHooks() {

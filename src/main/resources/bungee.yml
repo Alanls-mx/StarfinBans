@@ -83,9 +83,9 @@ commands:
     description: Alterar o motivo de uma punição.
     usage: /changereason <id> <new reason>
     permission: starfinbans.changereason
-  help:
+  banshelp:
     description: Ver lista de comandos de punição.
-    usage: /help
+    usage: /banshelp
     permission: starfinbans.help
 permissions:
   "starfinbans.*":
