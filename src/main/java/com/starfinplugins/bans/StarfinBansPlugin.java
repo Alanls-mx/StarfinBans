@@ -112,6 +112,7 @@ public class StarfinBansPlugin extends JavaPlugin {
         Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "=============================================");
         Bukkit.getConsoleSender().sendMessage(ChatColor.GOLD + "           StarfinBans v" + getDescription().getVersion());
         Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "      Desenvolvido por StarfinPlugins");
+        Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "      StarfinBans versão Spigot licenciada e autenticada.");
         Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "      Acesse nosso site: https://starfinplugins.com");
         Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "=============================================");
 

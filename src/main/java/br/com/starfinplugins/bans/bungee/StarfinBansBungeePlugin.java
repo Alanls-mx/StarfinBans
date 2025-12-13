@@ -56,6 +56,13 @@ public class StarfinBansBungeePlugin extends Plugin {
                 return;
             }
 
+            ProxyServer.getInstance().getConsole().sendMessage(ChatColor.YELLOW + "=============================================");
+            ProxyServer.getInstance().getConsole().sendMessage(ChatColor.GOLD + "           StarfinBans v" + getDescription().getVersion());
+            ProxyServer.getInstance().getConsole().sendMessage(ChatColor.YELLOW + "      Desenvolvido por StarfinPlugins");
+            ProxyServer.getInstance().getConsole().sendMessage(ChatColor.YELLOW + "      StarfinBans versão Bungee licenciada e autenticada.");
+            ProxyServer.getInstance().getConsole().sendMessage(ChatColor.YELLOW + "      Acesse nosso site: https://starfinplugins.com");
+            ProxyServer.getInstance().getConsole().sendMessage(ChatColor.YELLOW + "=============================================");
+
             // Storage
             String type = config.getString("storage-type", "sqlite");
             if ("mysql".equalsIgnoreCase(type)) {
