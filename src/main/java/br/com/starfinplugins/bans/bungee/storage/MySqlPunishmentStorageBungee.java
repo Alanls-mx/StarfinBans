@@ -22,18 +22,38 @@ public class MySqlPunishmentStorageBungee implements PunishmentStorage, DupeLook
     public MySqlPunishmentStorageBungee(StarfinBansBungeePlugin plugin, Configuration cfg) {
         this.plugin = plugin;
 
-        String url = "jdbc:mysql://" + cfg.getString("mysql.host") + ":" +
-                cfg.getInt("mysql.port") + "/" +
-                cfg.getString("mysql.database") +
-                "?useSSL=" + cfg.getBoolean("mysql.use-ssl", false);
+        String host = read(cfg, "host", "localhost");
+        int port = readInt(cfg, "port", 3306);
+        String database = read(cfg, "database", "minecraft");
+        String user = read(cfg, "user", "root");
+        String password = read(cfg, "password", "");
+        boolean useSSL = readBool(cfg, "use-ssl", false);
+        int poolSize = readInt(cfg, "pool-size", 10);
+
+        String url = "jdbc:mysql://" + host + ":" + port + "/" + database
+                + "?useSSL=" + useSSL
+                + "&useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC";
 
         HikariConfig hc = new HikariConfig();
         hc.setJdbcUrl(url);
-        hc.setUsername(cfg.getString("mysql.user"));
-        hc.setPassword(cfg.getString("mysql.password"));
-        hc.setMaximumPoolSize(cfg.getInt("mysql.pool-size", 10));
+        hc.setUsername(user);
+        hc.setPassword(password);
+        hc.setMaximumPoolSize(poolSize);
+        hc.setPoolName("StarfinBansBungee-MySQL");
 
         this.ds = new HikariDataSource(hc);
+    }
+
+    private String read(Configuration cfg, String key, String def) {
+        return cfg.getString("database." + key, cfg.getString("mysql." + key, def));
+    }
+
+    private int readInt(Configuration cfg, String key, int def) {
+        return cfg.getInt("database." + key, cfg.getInt("mysql." + key, def));
+    }
+
+    private boolean readBool(Configuration cfg, String key, boolean def) {
+        return cfg.getBoolean("database." + key, cfg.getBoolean("mysql." + key, def));
     }
 
     @Override
