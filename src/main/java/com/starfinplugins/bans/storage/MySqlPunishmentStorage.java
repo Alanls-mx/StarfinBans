@@ -83,4 +83,10 @@ public class MySqlPunishmentStorage implements PunishmentStorage {
     public List<String> getAlts(String ip) {
         return new ArrayList<>();
     }
+
+    @Override
+    public boolean updateReason(UUID punishmentId, String reason) {
+        // Implementar UPDATE reason
+        return false;
+    }
 }

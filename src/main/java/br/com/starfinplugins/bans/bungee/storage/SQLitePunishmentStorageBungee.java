@@ -305,6 +305,23 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
         }
     }
 
+    @Override
+    public boolean updateReason(UUID punishmentId, String reason) {
+        if (punishmentId == null || reason == null) return false;
+
+        String sql = "UPDATE punishments SET reason = ? WHERE id = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, reason);
+            ps.setString(2, punishmentId.toString());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().warning("SQLite updateReason: " + e.getMessage());
+        }
+
+        return false;
+    }
+
     // ---------------- DUPE LOOKUP (extra, sem quebrar interface) ----------------
 
     @Override

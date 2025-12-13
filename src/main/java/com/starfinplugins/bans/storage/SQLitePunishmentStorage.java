@@ -224,6 +224,23 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
         return alts;
     }
 
+    @Override
+    public boolean updateReason(UUID punishmentId, String reason) {
+        if (punishmentId == null || reason == null) return false;
+
+        String sql = "UPDATE punishments SET reason = ? WHERE id = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, reason);
+            ps.setString(2, punishmentId.toString());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
     private Punishment mapPunishment(ResultSet rs) throws SQLException {
         return new Punishment(
                 UUID.fromString(rs.getString("id")),

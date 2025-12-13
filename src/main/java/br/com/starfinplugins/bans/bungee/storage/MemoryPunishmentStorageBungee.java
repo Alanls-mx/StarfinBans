@@ -146,4 +146,32 @@ public class MemoryPunishmentStorageBungee implements PunishmentStorage {
         }
         return list;
     }
+
+    @Override
+    public boolean updateReason(UUID punishmentId, String reason) {
+        if (punishmentId == null || reason == null) return false;
+
+        for (int i = 0; i < punishments.size(); i++) {
+            Punishment p = punishments.get(i);
+            if (punishmentId.equals(p.getId())) {
+                boolean active = p.isActive();
+                punishments.set(i, new Punishment(
+                        p.getId(),
+                        p.getTarget(),
+                        p.getPlayerName(),
+                        p.getIp(),
+                        p.getStaff(),
+                        p.getStaffName(),
+                        p.getType(),
+                        reason,
+                        p.getCreatedAt(),
+                        p.getExpires(),
+                        active
+                ));
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

@@ -20,6 +20,8 @@ public interface PunishmentStorage {
     void expireAllPunishmentsByName(String targetName, UUID staff, String staffName);
     void expireAllPunishmentsByIp(String ip, UUID staff, String staffName);
 
+    boolean updateReason(UUID punishmentId, String reason);
+
     Punishment getActiveBan(UUID target);
     Punishment getActiveMute(UUID target);
 

@@ -83,6 +83,33 @@ public class MemoryPunishmentStorage implements PunishmentStorage {
     }
 
     @Override
+    public boolean updateReason(UUID punishmentId, String reason) {
+        if (punishmentId == null || reason == null) return false;
+
+        for (int i = 0; i < punishments.size(); i++) {
+            Punishment p = punishments.get(i);
+            if (punishmentId.equals(p.getId())) {
+                punishments.set(i, new Punishment(
+                        p.getId(),
+                        p.getTarget(),
+                        p.getPlayerName(),
+                        p.getIp(),
+                        p.getStaff(),
+                        p.getStaffName(),
+                        p.getType(),
+                        reason,
+                        p.getCreatedAt(),
+                        p.getExpires(),
+                        p.isActive()
+                ));
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
     public String getLastIp(UUID target) {
         // Simplificado
         if (target == null) return null;
