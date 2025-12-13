@@ -28,7 +28,7 @@ general:
     history: "&cUso correto: /history <jogador>"
     dupeip: "&cUso correto: /dupeip <jogador>"
     changereason: "&cUso correto: /changereason <id> <novo motivo>"
-    help: "&cUso correto: /help"
+    help: "&cUso correto: /banshelp"
 
 # Notificações para o Staff (quem aplicou a punição)
 notification:

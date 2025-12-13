@@ -1,6 +1,7 @@
 package br.com.starfinplugins.bans.bungee.command;
 
 import br.com.starfinplugins.bans.bungee.StarfinBansBungeePlugin;
+import br.com.starfinplugins.bans.bungee.storage.DupeLookupStorage;
 import br.com.starfinplugins.bans.bungee.util.CmdUtil;
 
 import net.md_5.bungee.api.CommandSender;
@@ -39,15 +40,28 @@ public class UnmuteCommand extends AbstractCommand {
                 return;
             }
         } else {
-            if (plugin.getPunishmentManager().getActiveMuteByName(targetName) == null) {
-                msg(sender, plugin.msg().get("general.not-punished").replace("%player%", targetName));
-                return;
+            if (plugin.getPunishmentManager().getActiveMuteByName(targetName) != null) {
+                plugin.getPunishmentManager().unmuteByName(targetName, null, sender.getName());
+            } else {
+                String lastIp = getLastIpByName(targetName);
+                if (lastIp != null && plugin.getPunishmentManager().getActiveIpMute(lastIp) != null) {
+                    plugin.getPunishmentManager().unmuteIp(lastIp, null, sender.getName());
+                } else {
+                    msg(sender, plugin.msg().get("general.not-punished").replace("%player%", targetName));
+                    return;
+                }
             }
-            plugin.getPunishmentManager().unmuteByName(targetName, null, sender.getName());
         }
 
         msg(sender, plugin.msg().get("notification.unmute")
                 .replace("%player%", targetName)
                 .replace("%staff%", sender.getName()));
+    }
+
+    private String getLastIpByName(String targetName) {
+        if (plugin.getStorage() instanceof DupeLookupStorage) {
+            return ((DupeLookupStorage) plugin.getStorage()).getLastIpByName(targetName);
+        }
+        return null;
     }
 }
