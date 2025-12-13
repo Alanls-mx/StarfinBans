@@ -22,6 +22,9 @@ public interface PunishmentStorage {
     Punishment getActiveBan(UUID target);
     Punishment getActiveMute(UUID target);
 
+    Punishment getActiveIpBan(String ip);
+    Punishment getActiveIpMute(String ip);
+
     Punishment getActiveBanByName(String targetName);
     Punishment getActiveMuteByName(String targetName);
 

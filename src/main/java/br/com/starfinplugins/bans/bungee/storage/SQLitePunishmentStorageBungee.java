@@ -97,6 +97,16 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
         return getActivePunishmentByTarget(target, "MUTE");
     }
 
+    @Override
+    public Punishment getActiveIpBan(String ip) {
+        return getActivePunishmentByIp(ip, "BAN_IP");
+    }
+
+    @Override
+    public Punishment getActiveIpMute(String ip) {
+        return getActivePunishmentByIp(ip, "MUTE_IP");
+    }
+
     private Punishment getActivePunishmentByTarget(UUID target, String prefix) {
         if (target == null) return null;
 
@@ -120,6 +130,27 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
             }
         } catch (SQLException e) {
             plugin.getLogger().warning("SQLite getActivePunishmentByTarget: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    private Punishment getActivePunishmentByIp(String ip, String prefix) {
+        if (ip == null || ip.isEmpty()) return null;
+
+        String sql = "SELECT * FROM punishments " +
+                "WHERE ip = ? AND active = 1 AND type LIKE ? " +
+                "ORDER BY created_at DESC LIMIT 1";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, ip);
+            ps.setString(2, prefix + "%");
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return map(rs);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().warning("SQLite getActivePunishmentByIp: " + e.getMessage());
         }
 
         return null;

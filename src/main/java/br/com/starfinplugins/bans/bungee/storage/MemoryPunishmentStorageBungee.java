@@ -75,6 +75,26 @@ public class MemoryPunishmentStorageBungee implements PunishmentStorage {
     }
 
     @Override
+    public Punishment getActiveIpBan(String ip) {
+        return punishments.stream()
+                .filter(p -> p.isActive()
+                        && p.getIp() != null
+                        && p.getIp().equals(ip)
+                        && p.getType().name().startsWith("BAN_IP"))
+                .findFirst().orElse(null);
+    }
+
+    @Override
+    public Punishment getActiveIpMute(String ip) {
+        return punishments.stream()
+                .filter(p -> p.isActive()
+                        && p.getIp() != null
+                        && p.getIp().equals(ip)
+                        && p.getType().name().startsWith("MUTE_IP"))
+                .findFirst().orElse(null);
+    }
+
+    @Override
     public Punishment getActiveBanByName(String targetName) {
         return punishments.stream()
                 .filter(p -> p.isActive()
