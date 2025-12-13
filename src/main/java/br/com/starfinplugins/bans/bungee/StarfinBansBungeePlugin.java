@@ -56,12 +56,7 @@ public class StarfinBansBungeePlugin extends Plugin {
                 return;
             }
 
-            ProxyServer.getInstance().getConsole().sendMessage(ChatColor.YELLOW + "=============================================");
-            ProxyServer.getInstance().getConsole().sendMessage(ChatColor.GOLD + "           StarfinBans v" + getDescription().getVersion());
-            ProxyServer.getInstance().getConsole().sendMessage(ChatColor.YELLOW + "      Desenvolvido por StarfinPlugins");
-            ProxyServer.getInstance().getConsole().sendMessage(ChatColor.YELLOW + "      StarfinBans versão Bungee licenciada e autenticada.");
-            ProxyServer.getInstance().getConsole().sendMessage(ChatColor.YELLOW + "      Acesse nosso site: https://starfinplugins.com");
-            ProxyServer.getInstance().getConsole().sendMessage(ChatColor.YELLOW + "=============================================");
+            sendStartupBanner();
 
             // Storage
             String type = config.getString("storage-type", "sqlite");
@@ -150,6 +145,21 @@ public class StarfinBansBungeePlugin extends Plugin {
     public boolean isLockdown() { return lockdown; }
     public void setLockdown(boolean lockdown) { this.lockdown = lockdown; }
     public boolean isLicensed() { return licensed; }
+
+    private void sendStartupBanner() {
+        String[] lines = new String[] {
+                ChatColor.YELLOW + "=============================================",
+                ChatColor.GOLD + "           StarfinBans v" + getDescription().getVersion(),
+                ChatColor.YELLOW + "      Desenvolvido por StarfinPlugins",
+                ChatColor.YELLOW + "      StarfinBans versão Bungee licenciada e autenticada.",
+                ChatColor.YELLOW + "      Acesse nosso site: https://starfinplugins.com",
+                ChatColor.YELLOW + "============================================="
+        };
+
+        for (String line : lines) {
+            ProxyServer.getInstance().getConsole().sendMessage(line);
+        }
+    }
 
     // ---------------- License System ----------------
 
