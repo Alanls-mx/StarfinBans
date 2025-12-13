@@ -12,6 +12,7 @@ import net.md_5.bungee.config.Configuration;
 
 import java.sql.*;
 import java.util.*;
+import java.util.logging.Level;
 
 public class MySqlPunishmentStorageBungee implements PunishmentStorage, DupeLookupStorage {
 
@@ -36,11 +37,13 @@ public class MySqlPunishmentStorageBungee implements PunishmentStorage, DupeLook
     }
 
     @Override
-    public void init() {
+    public boolean init() {
         try (Connection conn = ds.getConnection()) {
             createTables(conn);
+            return true;
         } catch (SQLException e) {
-            plugin.getLogger().severe("Falha ao iniciar MySQL: " + e.getMessage());
+            plugin.getLogger().log(Level.SEVERE, "Falha ao iniciar MySQL", e);
+            return false;
         }
     }
 

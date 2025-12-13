@@ -6,8 +6,10 @@ import br.com.starfinplugins.bans.bungee.model.PunishmentType;
 import br.com.starfinplugins.bans.bungee.storage.PunishmentStorage;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
+import java.util.logging.Level;
 
 public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLookupStorage {
 
@@ -19,7 +21,7 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
     }
 
     @Override
-    public void init() {
+    public boolean init() {
         try {
             File file = new File(plugin.getDataFolder(), "database.db");
             if (!file.exists()) {
@@ -31,8 +33,12 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
             connection = DriverManager.getConnection("jdbc:sqlite:" + file.getAbsolutePath());
             createTables();
 
-        } catch (Exception e) {
-            plugin.getLogger().severe("Falha ao iniciar SQLite: " + e.getMessage());
+            return true;
+
+        } catch (IOException | ClassNotFoundException | SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Falha ao iniciar SQLite", e);
+            close();
+            return false;
         }
     }
 

@@ -64,7 +64,10 @@ public class StarfinBansBungeePlugin extends Plugin {
             } else {
                 storage = new MemoryPunishmentStorageBungee();
             }
-            storage.init();
+            if (!storage.init()) {
+                getLogger().severe("Falha ao iniciar o armazenamento. Desabilitando StarfinBans.");
+                return;
+            }
 
             // Web
             webIntegration = new WebIntegrationService(this);

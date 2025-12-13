@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public interface PunishmentStorage {
 
-    void init();
+    boolean init();
     void close();
 
     void createPunishment(Punishment punishment);

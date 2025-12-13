@@ -11,7 +11,7 @@ public class MemoryPunishmentStorageBungee implements PunishmentStorage {
 
     private final List<Punishment> punishments = new CopyOnWriteArrayList<>();
 
-    @Override public void init() {}
+    @Override public boolean init() { return true; }
     @Override public void close() {}
 
     @Override
