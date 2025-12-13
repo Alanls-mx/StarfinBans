@@ -76,6 +76,13 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>net.md-5</groupId>
+            <artifactId>bungeecord-config</artifactId>
+            <version>${bungeecord.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Dependências EMBUTIDAS -->
         <dependency>
             <groupId>org.xerial</groupId>
