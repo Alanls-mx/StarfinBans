@@ -57,6 +57,10 @@ target:
     - "&eStaff: &f%staff%"
     - "&8&m------------------------------"
 
+chat-guardian:
+  blocked: "&cSua mensagem foi bloqueada por linguagem proibida."
+  punished: "&cVocê recebeu uma punição automática: %reason% (&f%duration%&c)."
+
 # Layouts de Tela (Kick/Login)
 layouts:
   ban:

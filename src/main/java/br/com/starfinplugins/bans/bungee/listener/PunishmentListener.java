@@ -58,6 +58,10 @@ public class PunishmentListener implements Listener {
         ProxiedPlayer p = (ProxiedPlayer) event.getSender();
         UUID uuid = p.getUniqueId();
 
+        if (handleChatGuardian(event, p)) {
+            return;
+        }
+
         Punishment mute = plugin.getStorage().getActiveMute(uuid);
         if (mute == null) return;
         if (mute.isExpired()) return;
@@ -75,5 +79,82 @@ public class PunishmentListener implements Listener {
                 .replace("%expires%", duration);
 
         p.sendMessage(TextUtil.tc(msg));
+    }
+
+    private boolean handleChatGuardian(ChatEvent event, ProxiedPlayer player) {
+        if (!plugin.getCfg().getBoolean("chat-guardian.enabled", false)) {
+            return false;
+        }
+
+        String message = event.getMessage();
+        if (message == null) {
+            return false;
+        }
+
+        String lower = message.toLowerCase();
+        boolean matched = false;
+        for (String phrase : plugin.getCfg().getStringList("chat-guardian.blocked-phrases")) {
+            if (phrase == null || phrase.trim().isEmpty()) continue;
+            if (lower.contains(phrase.toLowerCase())) {
+                matched = true;
+                break;
+            }
+        }
+
+        if (!matched) {
+            return false;
+        }
+
+        event.setCancelled(true);
+
+        String staffName = plugin.getCfg().getString("chat-guardian.staff-name", "StarfinAI");
+        String reason = plugin.getCfg().getString("chat-guardian.punishment.reason", "Linguagem proibida no chat");
+        String typeKey = plugin.getCfg().getString("chat-guardian.punishment.type", "tempmute");
+        String durationStr = plugin.getCfg().getString("chat-guardian.punishment.duration", "30m");
+        long durationMs = TimeUtil.parseDuration(durationStr);
+        Long duration = durationMs > 0 ? durationMs : null;
+
+        PunishmentType type = resolvePunishmentType(typeKey);
+
+        plugin.getPunishmentManager().punish(
+                player.getUniqueId(),
+                player.getName(),
+                player.getAddress().getAddress().getHostAddress(),
+                null,
+                staffName,
+                type,
+                reason,
+                duration
+        );
+
+        String durationText = duration != null ? TimeUtil.formatDuration(duration) : "Permanente";
+        player.sendMessage(TextUtil.tc(plugin.msg().get("chat-guardian.blocked")));
+        player.sendMessage(TextUtil.tc(plugin.msg().get("chat-guardian.punished")
+                .replace("%reason%", reason)
+                .replace("%duration%", durationText)
+        ));
+
+        return true;
+    }
+
+    private PunishmentType resolvePunishmentType(String raw) {
+        if (raw == null) return PunishmentType.MUTE_TEMPORARY;
+
+        String key = raw.toLowerCase();
+        switch (key) {
+            case "ban":
+            case "permanentban":
+                return PunishmentType.BAN_PERMANENT;
+            case "tempban":
+            case "ban_temp":
+                return PunishmentType.BAN_TEMPORARY;
+            case "mute":
+            case "permanentmute":
+                return PunishmentType.MUTE_PERMANENT;
+            case "tempmute":
+            case "mute_temp":
+            default:
+                return PunishmentType.MUTE_TEMPORARY;
+        }
     }
 }
