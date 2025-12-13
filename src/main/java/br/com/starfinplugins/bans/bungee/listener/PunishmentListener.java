@@ -6,7 +6,6 @@ import br.com.starfinplugins.bans.bungee.model.PunishmentType;
 import br.com.starfinplugins.bans.bungee.util.TextUtil;
 import br.com.starfinplugins.bans.bungee.util.TimeUtil;
 
-import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.ChatEvent;
 import net.md_5.bungee.api.event.LoginEvent;
@@ -48,7 +47,7 @@ public class PunishmentListener implements Listener {
                 .replace("%expires%", duration);
 
         event.setCancelled(true);
-        event.setCancelReason(new TextComponent(TextUtil.tc(layout)));
+        event.setCancelReason(layout);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
