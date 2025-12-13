@@ -84,7 +84,7 @@ public final class ConfigUtil {
 
         boolean corrected = false;
         for (String key : defaultKeys) {
-            if (!target.contains(key)) {
+            if (!hasPath(target, key)) {
                 target.set(key, defaults.get(key));
                 corrected = true;
                 plugin.getLogger().warning("Chave faltando adicionada em " + fileName + ": " + key);
@@ -108,6 +108,32 @@ public final class ConfigUtil {
                 collectKeys((Configuration) child, fullKey, output);
             }
         }
+    }
+
+    private static boolean hasPath(Configuration config, String path) {
+        String[] parts = path.split("\\.");
+        Configuration cursor = config;
+
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i];
+            Object child = cursor.get(part);
+
+            if (child == null) {
+                return false;
+            }
+
+            if (i == parts.length - 1) {
+                return true;
+            }
+
+            if (!(child instanceof Configuration)) {
+                return false;
+            }
+
+            cursor = (Configuration) child;
+        }
+
+        return false;
     }
 
     private static void backupAndRestore(Plugin plugin, File file, String resourceName) {
