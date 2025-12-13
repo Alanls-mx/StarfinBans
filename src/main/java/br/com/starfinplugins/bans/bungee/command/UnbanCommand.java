@@ -25,8 +25,16 @@ public class UnbanCommand extends AbstractCommand {
         ProxiedPlayer online = CmdUtil.online(targetName);
 
         if (online != null) {
+            if (plugin.getPunishmentManager().getActiveBan(online.getUniqueId()) == null) {
+                msg(sender, plugin.msg().get("general.not-punished").replace("%player%", targetName));
+                return;
+            }
             plugin.getPunishmentManager().unban(online.getUniqueId(), null, sender.getName());
         } else {
+            if (plugin.getPunishmentManager().getActiveBanByName(targetName) == null) {
+                msg(sender, plugin.msg().get("general.not-punished").replace("%player%", targetName));
+                return;
+            }
             plugin.getPunishmentManager().unbanByName(targetName, null, sender.getName());
         }
 
