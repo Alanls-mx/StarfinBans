@@ -1,0 +1,33 @@
+# Tipos de armazenamento: "mysql", "sqlite", "memory"
+# sqlite: Cria um arquivo database.db na pasta do plugin (Persistente, não precisa instalar nada)
+# memory: Perde tudo ao reiniciar (Apenas para testes)
+storage-type: "sqlite"
+
+database:
+  host: "localhost"
+  port: 3306
+  database: "punishments"
+  user: "root"
+  password: "password"
+  use-ssl: false
+  pool-size: 10
+
+web-api:
+  enabled: false
+  base-url: "https://meupainel.com/api/punishments"
+  api-key: "MINHA_CHAVE_SECRETA"
+  timeout: 5000
+  send-on-create: true
+  send-on-update: true
+  send-on-expire: true
+
+options:
+  allow-offline-punish: true
+  broadcast-bans: true
+  broadcast-mutes: false
+  # Se true, bloqueia login se o IP estiver banido, mesmo que o Nick seja diferente
+  block-ip-on-login: true
+
+vault:
+  use-permissions: true
+  use-economy: false

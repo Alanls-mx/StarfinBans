@@ -1,0 +1,170 @@
+prefix: "&8[&5StarfinBans&8] &r"
+
+# Mensagens de Erro e Uso
+general:
+  player-not-found: "&cJogador &e%player% &cnão encontrado ou nunca entrou no servidor."
+  player-only: "&cApenas jogadores podem executar este comando."
+  ip-required: "&cEste comando requer um jogador online ou um IP válido."
+  invalid-time: "&cFormato de tempo inválido. Exemplos: 1d, 12h, 30m."
+  not-punished: "&cO jogador &e%player% &cnão possui punições ativas deste tipo."
+
+  # Uso Correto
+  usage:
+    ban: "&cUso correto: /ban <jogador> <motivo>"
+    tempban: "&cUso correto: /tempban <jogador> <tempo> <motivo>"
+    ipban: "&cUso correto: /ipban <jogador/IP> <motivo>"
+    tempipban: "&cUso correto: /tempipban <jogador/IP> <tempo> <motivo>"
+    mute: "&cUso correto: /mute <jogador> <motivo>"
+    tempmute: "&cUso correto: /tempmute <jogador> <tempo> <motivo>"
+    ipmute: "&cUso correto: /ipmute <jogador/IP> <motivo>"
+    tempipmute: "&cUso correto: /tempipmute <jogador/IP> <tempo> <motivo>"
+    kick: "&cUso correto: /kick <jogador> <motivo>"
+    warn: "&cUso correto: /warn <jogador> <motivo>"
+    unban: "&cUso correto: /unban <jogador>"
+    unmute: "&cUso correto: /unmute <jogador>"
+    unwarn: "&cUso correto: /unwarn <jogador>"
+    history: "&cUso correto: /history <jogador>"
+    dupeip: "&cUso correto: /dupeip <jogador>"
+    changereason: "&cUso correto: /changereason <id> <novo motivo>"
+    help: "&cUso correto: /help"
+
+# Notificações para o Staff (quem aplicou a punição)
+notification:
+  ban: "&a[Staff] Você baniu %player% permanentemente."
+  tempban: "&a[Staff] Você baniu %player% por %duration%."
+  ipban: "&a[Staff] Você baniu o IP de %player%."
+  tempipban: "&a[Staff] Você baniu temporariamente o IP de %player% por %duration%."
+  mute: "&a[Staff] Você mutou %player%."
+  tempmute: "&a[Staff] Você mutou %player% por %duration%."
+  ipmute: "&a[Staff] Você mutou o IP de %player%."
+  tempipmute: "&a[Staff] Você mutou temporariamente o IP de %player% por %duration%."
+  kick: "&a[Staff] Você expulsou %player%."
+  warn: "&a[Staff] Você alertou %player%."
+  unban: "&a[Staff] Você desbaniu %player%."
+  unmute: "&a[Staff] Você desmutou %player%."
+  unwarn: "&a[Staff] Você removeu os alertas de %player%."
+  changereason: "&a[Staff] Motivo da punição #%id% alterado para: %reason%"
+
+# Mensagens para o Alvo (quem sofreu a punição)
+target:
+  muted: "&cVocê foi mutado por &f%staff%&c. Motivo: &f%reason%"
+  warned:
+    - "&8&m------------------------------"
+    - "&c&lVOCÊ RECEBEU UM AVISO"
+    - "&eMotivo: &f%reason%"
+    - "&eStaff: &f%staff%"
+    - "&8&m------------------------------"
+
+# Layouts de Tela (Kick/Login)
+layouts:
+  ban:
+    - "&c&lSUA CONTA ESTÁ BANIDA"
+    - ""
+    - "&7Motivo: &f%reason%"
+    - "&7Staff: &f%staff%"
+    - "&7Duração: &fPermanente"
+  tempban:
+    - "&c&lBANIMENTO TEMPORÁRIO"
+    - ""
+    - "&7Motivo: &f%reason%"
+    - "&7Staff: &f%staff%"
+    - "&7Expira em: &f%expires%"
+  ipban:
+    - "&c&lSEU IP ESTÁ BANIDO"
+    - ""
+    - "&7Este endereço IP foi bloqueado."
+    - "&7Motivo: &f%reason%"
+  tempipban:
+    - "&c&lSEU IP ESTÁ BANIDO TEMPORARIAMENTE"
+    - ""
+    - "&7Este endereço IP foi bloqueado."
+    - "&7Motivo: &f%reason%"
+    - "&7Expira em: &f%expires%"
+  kick:
+    - "&c&lVOCÊ FOI EXPULSO"
+    - ""
+    - "&7Motivo: &f%reason%"
+    - "&7Staff: &f%staff%"
+  lockdown:
+    - "&c&lMANUTENÇÃO"
+    - ""
+    - "&7O servidor está fechado no momento."
+
+# Broadcast (Anúncio Global)
+broadcast:
+  ban:
+    - ""
+    - "&c&lBANIMENTO &7(Perm)"
+    - "&eJogador: &f%player%"
+    - "&eStaff: &f%staff%"
+    - "&eMotivo: &f%reason%"
+    - ""
+  tempban:
+    - ""
+    - "&c&lBANIMENTO TEMPORÁRIO"
+    - "&eJogador: &f%player%"
+    - "&eDuração: &f%duration%"
+    - "&eStaff: &f%staff%"
+    - "&eMotivo: &f%reason%"
+    - ""
+  ipban:
+    - "&c&lIP BANIDO"
+    - "&eJogador: &f%player%"
+    - "&eStaff: &f%staff%"
+  tempipban:
+    - "&c&lIP BANIDO TEMP"
+    - "&eJogador: &f%player%"
+    - "&eDuração: &f%duration%"
+    - "&eStaff: &f%staff%"
+  mute:
+    - "&c&lMUTE"
+    - "&eJogador: &f%player%"
+    - "&eMotivo: &f%reason%"
+  tempmute:
+    - "&c&lTEMP MUTE"
+    - "&eJogador: &f%player%"
+    - "&eDuração: &f%duration%"
+    - "&eMotivo: &f%reason%"
+  ipmute:
+    - "&c&lIP MUTE"
+    - "&eJogador: &f%player%"
+  tempipmute:
+    - "&c&lIP MUTE TEMP"
+    - "&eJogador: &f%player%"
+    - "&eDuração: &f%duration%"
+  kick:
+    - "&e%player% &ffoi expulso por &c%staff%&f."
+  warn:
+    - "&e%player% &frecebeu um aviso de &c%staff%&f."
+  changereason:
+    - "&eMotivo da punição #%id% alterado por &c%staff%&e."
+    - "&eNovo motivo: &f%reason%"
+
+# Histórico e Informações
+history:
+  header: "&8&m-----&r &eHistórico: %player% &8&m-----"
+  format: "&7#%id% &f%type% &7- %reason% &8(%time_ago%) %active%"
+  empty: "&7Nenhum histórico encontrado."
+
+check:
+  header: "&8&m-----&r &eInformações de %player% &8&m-----"
+  banned: "&c[BANIDO] &fMotivo: %reason% &7(Por: %staff%)"
+  muted: "&c[MUTADO] &fMotivo: %reason% &7(Por: %staff%)"
+  clean: "&aO jogador não possui punições ativas deste tipo."
+
+dupeip:
+  scanning: "&eProcurando contas associadas..."
+  header: "&8&m-----&r &eContas no mesmo IP: %ip% &8&m-----"
+  format: "&7- &f%player% &7(%status%)"
+
+help:
+  header: "&8&m-----&r &eAjuda StarfinBans &8&m-----"
+  format: "&e/%command% &7- %description%"
+
+permissions:
+  no-permission-general: "&cVocê não tem permissão para executar este comando."
+
+admin:
+  reload: "&aConfiguração e mensagens recarregadas."
+  lockdown-enable: "&cLOCKDOWN ATIVADO! Apenas staff pode entrar."
+  lockdown-disable: "&aLockdown desativado."

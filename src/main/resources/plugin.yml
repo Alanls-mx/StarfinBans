@@ -1,0 +1,119 @@
+# yaml
+name: StarfinBans
+version: 1.0.0
+main: com.starfinplugins.bans.StarfinBansPlugin
+api-version: 1.0.0
+authors: [StarfinPlugins]
+description: Sistema avançado de punições.
+website: https://starfinplugins.com
+depend:
+  - StarfinLicense
+softdepend:
+  - Vault
+  - PlaceholderAPI
+commands:
+  starfinbans:
+    description: Comandos administrativos do plugin.
+    aliases: [sbans]
+    permission: starfinbans.admin
+  ban:
+    description: Banir um jogador permanentemente.
+    usage: /ban <player> <reason>
+    permission: starfinbans.ban
+  tempban:
+    description: Banir um jogador temporariamente.
+    usage: /tempban <player> <time> <reason>
+    permission: starfinbans.tempban
+  ipban:
+    description: Banir um IP permanentemente.
+    usage: /ipban <player/ip> <reason>
+    permission: starfinbans.ipban
+  tempipban:
+    description: Banir um IP temporariamente.
+    usage: /tempipban <player/ip> <time> <reason>
+    permission: starfinbans.tempipban
+  mute:
+    description: Mutar um jogador permanentemente.
+    usage: /mute <player> <reason>
+    permission: starfinbans.mute
+  tempmute:
+    description: Mutar um jogador temporariamente.
+    usage: /tempmute <player> <time> <reason>
+    permission: starfinbans.tempmute
+  ipmute:
+    description: Mutar um IP permanentemente.
+    usage: /ipmute <player/ip> <reason>
+    permission: starfinbans.ipmute
+  tempipmute:
+    description: Mutar um IP temporariamente.
+    usage: /tempipmute <player/ip> <time> <reason>
+    permission: starfinbans.tempipmute
+  kick:
+    description: Expulsar um jogador.
+    usage: /kick <player> <reason>
+    permission: starfinbans.kick
+  warn:
+    description: Alertar um jogador.
+    usage: /warn <player> <reason>
+    permission: starfinbans.warn
+  unban:
+    description: Desbanir um jogador.
+    usage: /unban <player>
+    permission: starfinbans.unban
+  unmute:
+    description: Desmutar um jogador.
+    usage: /unmute <player>
+    permission: starfinbans.unmute
+  unwarn:
+    description: Remover alertas de um jogador.
+    usage: /unwarn <player>
+    permission: starfinbans.unwarn
+  history:
+    description: Ver histórico de punições.
+    usage: /history <player>
+    permission: starfinbans.history
+  checkban:
+    description: Verificar se um jogador está banido.
+    usage: /checkban <player>
+    permission: starfinbans.checkban
+  checkmute:
+    description: Verificar se um jogador está mutado.
+    usage: /checkmute <player>
+    permission: starfinbans.checkmute
+  dupeip:
+    description: Verificar contas no mesmo IP.
+    usage: /dupeip <player>
+    permission: starfinbans.dupeip
+  changereason:
+    description: Alterar o motivo de uma punição.
+    usage: /changereason <id> <new reason>
+    permission: starfinbans.changereason
+  help:
+    description: Ver lista de comandos de punição.
+    usage: /help
+    permission: starfinbans.help
+
+permissions:
+  starfinbans.*:
+    description: Permissão total.
+    children:
+      starfinbans.admin: true
+      starfinbans.ban: true
+      starfinbans.tempban: true
+      starfinbans.ipban: true
+      starfinbans.tempipban: true
+      starfinbans.mute: true
+      starfinbans.tempmute: true
+      starfinbans.ipmute: true
+      starfinbans.tempipmute: true
+      starfinbans.kick: true
+      starfinbans.warn: true
+      starfinbans.unban: true
+      starfinbans.unmute: true
+      starfinbans.unwarn: true
+      starfinbans.history: true
+      starfinbans.checkban: true
+      starfinbans.checkmute: true
+      starfinbans.dupeip: true
+      starfinbans.changereason: true
+      starfinbans.help: true
