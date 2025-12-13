@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -219,11 +220,25 @@ public class StarfinBansPlugin extends JavaPlugin {
             saveResource("messages.yml", false);
         }
 
-        FileConfiguration currentMessages = YamlConfiguration.loadConfiguration(file);
+        FileConfiguration currentMessages = new YamlConfiguration();
+        boolean corrupted = false;
+
+        try {
+            currentMessages.load(file);
+        } catch (IOException | org.bukkit.configuration.InvalidConfigurationException ex) {
+            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] Falha ao ler messages.yml: " + ex.getMessage());
+            corrupted = true;
+        }
 
         // Carrega o arquivo padrão interno para comparação
         Reader defConfigStream = new InputStreamReader(getResource("messages.yml"), StandardCharsets.UTF_8);
         FileConfiguration defaultMessages = YamlConfiguration.loadConfiguration(defConfigStream);
+
+        if (corrupted) {
+            backupMessages(file);
+            saveResource("messages.yml", true);
+            currentMessages = YamlConfiguration.loadConfiguration(file);
+        }
 
         // Verifica se todas as chaves padrão existem no arquivo atual
         Set<String> defaultKeys = defaultMessages.getKeys(true);
@@ -240,19 +255,24 @@ public class StarfinBansPlugin extends JavaPlugin {
             Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] O arquivo messages.yml está desatualizado ou corrompido.");
             Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[StarfinBans] Criando backup e regenerando arquivo padrão...");
 
-            try {
-                String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-                File backup = new File(getDataFolder(), "messages_backup_" + timestamp + ".yml");
-                Files.copy(file.toPath(), backup.toPath());
-                // Re-salva o recurso padrão
-                saveResource("messages.yml", true);
-            } catch (IOException e) {
-                Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] Falha ao criar backup do messages.yml: " + e.getMessage());
-                e.printStackTrace();
-            }
+            backupMessages(file);
+            saveResource("messages.yml", true);
+            currentMessages = YamlConfiguration.loadConfiguration(file);
         }
 
         this.messageUtil = new MessageUtil(currentMessages);
+    }
+
+    private void backupMessages(File file) {
+        try {
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+            File backup = new File(getDataFolder(), "messages_backup_" + timestamp + ".yml");
+            Files.copy(file.toPath(), backup.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[StarfinBans] Backup do messages.yml criado: " + backup.getName());
+        } catch (IOException e) {
+            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] Falha ao criar backup do messages.yml: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void registerCommands() {

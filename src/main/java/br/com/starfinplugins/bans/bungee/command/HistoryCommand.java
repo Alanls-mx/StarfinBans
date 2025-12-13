@@ -47,7 +47,7 @@ public class HistoryCommand extends AbstractCommand {
                 if (p.isExpired()) status = "§e(Expirado)";
 
                 sender.sendMessage(TextUtil.tc(format
-                        .replace("%id%", p.getId().toString().substring(0, 8))
+                        .replace("%id%", p.getId().toString())
                         .replace("%type%", p.getType().name())
                         .replace("%reason%", safe(p.getReason()))
                         .replace("%active%", status)

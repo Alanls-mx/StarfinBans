@@ -48,7 +48,7 @@ public class HistoryCommand implements CommandExecutor {
                 if (p.isExpired()) status = "§e(Expirado)";
 
                 sender.sendMessage(lineFormat
-                        .replace("%id%", p.getId().toString().substring(0, 8))
+                        .replace("%id%", p.getId().toString())
                         .replace("%type%", p.getType().name())
                         .replace("%reason%", p.getReason())
                         .replace("%active%", status)
