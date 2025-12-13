@@ -15,6 +15,7 @@ import br.com.starfinplugins.bans.bungee.storage.PunishmentStorage;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.plugin.PluginManager;
 import net.md_5.bungee.config.Configuration;
@@ -157,7 +158,7 @@ public class StarfinBansBungeePlugin extends Plugin {
         };
 
         for (String line : lines) {
-            ProxyServer.getInstance().getConsole().sendMessage(line);
+            ProxyServer.getInstance().getConsole().sendMessage(new TextComponent(line));
         }
     }
 
