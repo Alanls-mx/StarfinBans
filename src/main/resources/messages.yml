@@ -152,6 +152,7 @@ check:
   header: "&8&m-----&r &eInformações de %player% &8&m-----"
   banned: "&c[BANIDO] &fMotivo: %reason% &7(Por: %staff%)"
   muted: "&c[MUTADO] &fMotivo: %reason% &7(Por: %staff%)"
+  format: "&e%player% &7- &f%type% &7Motivo: &f%reason% &7Staff: &f%staff% &7Duração: &f%duration%"
   clean: "&aO jogador não possui punições ativas deste tipo."
 
 dupeip:
