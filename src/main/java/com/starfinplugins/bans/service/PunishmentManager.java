@@ -57,7 +57,11 @@ public class PunishmentManager implements PunishmentAPI { // Implementação exp
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             storage.expirePunishment(target, PunishmentType.BAN_PERMANENT, staff, staffName);
             storage.expirePunishment(target, PunishmentType.BAN_TEMPORARY, staff, staffName);
-            storage.expirePunishment(target, PunishmentType.BAN_IP_PERMANENT, staff, staffName);
+
+            String lastIp = storage.getLastIp(target);
+            if (lastIp != null) {
+                storage.expireAllPunishmentsByIp(lastIp, staff, staffName);
+            }
 
             // Evento de Unpunish
             Bukkit.getScheduler().runTask(plugin, () -> {
@@ -68,11 +72,24 @@ public class PunishmentManager implements PunishmentAPI { // Implementação exp
     }
 
     @Override
+    public void unbanIp(String ip, UUID staff, String staffName) {
+        if (ip == null) return;
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            storage.expireAllPunishmentsByIp(ip, staff, staffName);
+        });
+    }
+
+    @Override
     public void unmute(UUID target, UUID staff, String staffName) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             storage.expirePunishment(target, PunishmentType.MUTE_PERMANENT, staff, staffName);
             storage.expirePunishment(target, PunishmentType.MUTE_TEMPORARY, staff, staffName);
-            storage.expirePunishment(target, PunishmentType.MUTE_IP_PERMANENT, staff, staffName);
+
+            String lastIp = storage.getLastIp(target);
+            if (lastIp != null) {
+                storage.expireAllPunishmentsByIp(lastIp, staff, staffName);
+            }
 
             // Evento de Unpunish
             Bukkit.getScheduler().runTask(plugin, () -> {
@@ -83,13 +100,57 @@ public class PunishmentManager implements PunishmentAPI { // Implementação exp
     }
 
     @Override
+    public void unmuteIp(String ip, UUID staff, String staffName) {
+        if (ip == null) return;
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            storage.expireAllPunishmentsByIp(ip, staff, staffName);
+        });
+    }
+
+    @Override
     public boolean isBanned(UUID target) {
-        return storage.getActiveBan(target) != null;
+        if (target == null) return false;
+
+        if (storage.getActiveBan(target) != null) return true;
+
+        String lastIp = storage.getLastIp(target);
+        return lastIp != null && storage.getActiveIpBan(lastIp) != null;
     }
 
     @Override
     public boolean isMuted(UUID target) {
-        return storage.getActiveMute(target) != null;
+        if (target == null) return false;
+
+        if (storage.getActiveMute(target) != null) return true;
+
+        String lastIp = storage.getLastIp(target);
+        return lastIp != null && storage.getActiveIpMute(lastIp) != null;
+    }
+
+    @Override
+    public Punishment getActiveBan(UUID target) {
+        return storage.getActiveBan(target);
+    }
+
+    @Override
+    public Punishment getActiveMute(UUID target) {
+        return storage.getActiveMute(target);
+    }
+
+    @Override
+    public Punishment getActiveIpBan(String ip) {
+        return storage.getActiveIpBan(ip);
+    }
+
+    @Override
+    public Punishment getActiveIpMute(String ip) {
+        return storage.getActiveIpMute(ip);
+    }
+
+    @Override
+    public String getLastIp(UUID target) {
+        return storage.getLastIp(target);
     }
 
     @Override

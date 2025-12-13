@@ -97,6 +97,7 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
     }
 
     private Punishment getActivePunishment(UUID target, String typePrefix) {
+        if (target == null) return null;
         String sql = "SELECT * FROM punishments WHERE target = ? AND active = 1 AND type LIKE ? ORDER BY created_at DESC LIMIT 1";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, target.toString());
@@ -163,6 +164,8 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
     @Override
     public void expirePunishment(UUID target, PunishmentType type, UUID staff, String staffName) {
         // Desativa punições ativas desse tipo para o alvo
+        if (target == null || type == null) return;
+
         String sql = "UPDATE punishments SET active = 0 WHERE target = ? AND type = ? AND active = 1";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, target.toString());
@@ -174,7 +177,22 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
     }
 
     @Override
+    public void expireAllPunishmentsByIp(String ip, UUID staff, String staffName) {
+        if (ip == null || ip.isEmpty()) return;
+
+        String sql = "UPDATE punishments SET active = 0 WHERE ip = ? AND active = 1";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, ip);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     public String getLastIp(UUID target) {
+        if (target == null) return null;
         String sql = "SELECT ip FROM punishments WHERE target = ? ORDER BY created_at DESC LIMIT 1";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, target.toString());

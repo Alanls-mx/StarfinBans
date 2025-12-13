@@ -7,6 +7,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import java.util.UUID;
 
 public class UnmuteCommand implements CommandExecutor {
     private final StarfinBansPlugin plugin;
@@ -25,14 +26,31 @@ public class UnmuteCommand implements CommandExecutor {
         }
 
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
+        String targetIp = null;
 
-        if (!plugin.getPunishmentAPI().isMuted(target.getUniqueId())) {
+        if (target.isOnline()) {
+            targetIp = target.getPlayer().getAddress().getAddress().getHostAddress();
+        } else {
+            targetIp = plugin.getPunishmentAPI().getLastIp(target.getUniqueId());
+        }
+
+        boolean hasMute = plugin.getPunishmentAPI().getActiveMute(target.getUniqueId()) != null;
+        boolean hasIpMute = targetIp != null && plugin.getPunishmentAPI().getActiveIpMute(targetIp) != null;
+
+        if (!hasMute && !hasIpMute) {
             sender.sendMessage(plugin.getMessageUtil().get("general.not-punished")
                     .replace("%player%", args[0]));
             return true;
         }
 
-        plugin.getPunishmentAPI().unmute(target.getUniqueId(), (sender instanceof Player ? ((Player)sender).getUniqueId() : null), sender.getName());
+        UUID staffId = sender instanceof Player ? ((Player) sender).getUniqueId() : null;
+
+        if (hasMute) {
+            plugin.getPunishmentAPI().unmute(target.getUniqueId(), staffId, sender.getName());
+        }
+        if (hasIpMute) {
+            plugin.getPunishmentAPI().unmuteIp(targetIp, staffId, sender.getName());
+        }
 
         sender.sendMessage(plugin.getMessageUtil().get("notification.unmute")
                 .replace("%player%", args[0])

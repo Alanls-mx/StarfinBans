@@ -21,6 +21,7 @@ public interface PunishmentStorage {
     List<Punishment> getHistory(UUID target);
 
     void expirePunishment(UUID target, PunishmentType type, UUID staff, String staffName);
+    void expireAllPunishmentsByIp(String ip, UUID staff, String staffName);
 
     String getLastIp(UUID target);
     List<String> getAlts(String ip);

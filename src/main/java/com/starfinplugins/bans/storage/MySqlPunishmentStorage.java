@@ -70,6 +70,11 @@ public class MySqlPunishmentStorage implements PunishmentStorage {
     }
 
     @Override
+    public void expireAllPunishmentsByIp(String ip, UUID staff, String staffName) {
+        // Implementar UPDATE active=0 por IP
+    }
+
+    @Override
     public String getLastIp(UUID target) {
         return null;
     }
