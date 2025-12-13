@@ -17,35 +17,29 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
-        <!-- versões -->
         <bungeecord.version>1.8-SNAPSHOT</bungeecord.version>
         <sqlite.jdbc.version>3.46.1.0</sqlite.jdbc.version>
         <okhttp.version>4.12.0</okhttp.version>
-
         <hikari.version>4.0.3</hikari.version>
         <mysql.driver.version>8.4.0</mysql.driver.version>
     </properties>
 
     <repositories>
-        <!-- Spigot Repo (1.8.8 via BuildTools no .m2) -->
         <repository>
             <id>spigot-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
 
-        <!-- PlaceholderAPI Repo -->
         <repository>
             <id>placeholderapi</id>
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
         </repository>
 
-        <!-- Vault Repo (JitPack) -->
         <repository>
             <id>vault-repo</id>
             <url>https://jitpack.io</url>
         </repository>
 
-        <!-- BungeeCord API snapshots -->
         <repository>
             <id>aikar-repo</id>
             <url>https://repo.aikar.co/nexus/content/groups/aikar/</url>
@@ -53,7 +47,7 @@
     </repositories>
 
     <dependencies>
-        <!-- Spigot API 1.8.8 -->
+        <!-- APIs (NÃO entram no JAR) -->
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
@@ -61,7 +55,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- PlaceholderAPI -->
         <dependency>
             <groupId>me.clip</groupId>
             <artifactId>placeholderapi</artifactId>
@@ -69,7 +62,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Vault API -->
         <dependency>
             <groupId>com.github.MilkBowl</groupId>
             <artifactId>VaultAPI</artifactId>
@@ -77,7 +69,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- BungeeCord API (PROVIDED - roda no Proxy) -->
         <dependency>
             <groupId>net.md-5</groupId>
             <artifactId>bungeecord-api</artifactId>
@@ -85,38 +76,38 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- SQLite JDBC (EMBUTIDO no JAR p/ Bungee SQLite funcionar) -->
+        <!-- Dependências EMBUTIDAS -->
         <dependency>
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
             <version>${sqlite.jdbc.version}</version>
         </dependency>
 
-        <!-- HTTP Client p/ WebIntegrationService (EMBUTIDO) -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>${okhttp.version}</version>
         </dependency>
 
-        <!-- HikariCP (corrige: package com.zaxxer.hikari does not exist) -->
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <version>${hikari.version}</version>
         </dependency>
 
-        <!-- MySQL Driver (se for usar MySQL no Bungee/Spigot) -->
+        <!-- MySQL NÃO embutido -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <version>${mysql.driver.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <!-- Compilação Java 8 -->
+
+            <!-- Java 8 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -127,11 +118,11 @@
                 </configuration>
             </plugin>
 
-            <!-- Shade: gera 1 JAR final com deps EMBUTIDAS -->
+            <!-- SHADE CORRIGIDO -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.6.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -139,9 +130,34 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+
+                            <!-- 🔥 Mantém jar pequeno SEM quebrar SQLite -->
+                            <minimizeJar>true</minimizeJar>
+
                             <shadedArtifactAttached>false</shadedArtifactAttached>
 
+                            <!-- Só o que deve entrar -->
+                            <artifactSet>
+                                <includes>
+                                    <include>org.xerial:sqlite-jdbc</include>
+                                    <include>com.squareup.okhttp3:okhttp</include>
+                                    <include>com.squareup.okio:okio</include>
+                                    <include>com.zaxxer:HikariCP</include>
+                                </includes>
+                            </artifactSet>
+
                             <filters>
+                                <!-- NÃO deixa o minimize remover SQLite -->
+                                <filter>
+                                    <artifact>org.xerial:sqlite-jdbc</artifact>
+                                    <includes>
+                                        <include>org/sqlite/**</include>
+                                        <include>org/sqlite/native/**</include>
+                                        <include>META-INF/services/**</include>
+                                    </includes>
+                                </filter>
+
+                                <!-- Limpa assinaturas inválidas -->
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
@@ -157,12 +173,11 @@
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
                             </transformers>
 
-                            <!-- Opcional: se quiser evitar conflitos, dá pra relocar libs.
-                                 (Se começar a dar conflito com outros plugins, eu ajusto isso.) -->
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
 
         <resources>
