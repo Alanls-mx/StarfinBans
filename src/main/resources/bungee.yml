@@ -88,8 +88,9 @@ commands:
     usage: /help
     permission: starfinbans.help
 permissions:
-  starfinbans.*:
+  "starfinbans.*":
     description: Permissão total.
+    default: false
     children:
       starfinbans.admin: true
       starfinbans.ban: true
