@@ -28,11 +28,16 @@ public class UnmuteCommand extends AbstractCommand {
         ProxiedPlayer online = CmdUtil.online(targetName);
 
         if (online != null) {
-            if (plugin.getPunishmentManager().getActiveMute(online.getUniqueId()) == null) {
+            String ip = online.getAddress().getAddress().getHostAddress();
+
+            if (plugin.getPunishmentManager().getActiveMute(online.getUniqueId()) != null) {
+                plugin.getPunishmentManager().unmute(online.getUniqueId(), null, sender.getName());
+            } else if (plugin.getPunishmentManager().getActiveIpMute(ip) != null) {
+                plugin.getPunishmentManager().unmuteIp(ip, null, sender.getName());
+            } else {
                 msg(sender, plugin.msg().get("general.not-punished").replace("%player%", targetName));
                 return;
             }
-            plugin.getPunishmentManager().unmute(online.getUniqueId(), null, sender.getName());
         } else {
             if (plugin.getPunishmentManager().getActiveMuteByName(targetName) == null) {
                 msg(sender, plugin.msg().get("general.not-punished").replace("%player%", targetName));

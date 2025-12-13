@@ -291,6 +291,20 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
         }
     }
 
+    @Override
+    public void expireAllPunishmentsByIp(String ip, UUID staff, String staffName) {
+        if (ip == null || ip.isEmpty()) return;
+
+        String sql = "UPDATE punishments SET active = 0 WHERE ip = ? AND active = 1";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, ip);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().warning("SQLite expireAllPunishmentsByIp: " + e.getMessage());
+        }
+    }
+
     // ---------------- DUPE LOOKUP (extra, sem quebrar interface) ----------------
 
     @Override

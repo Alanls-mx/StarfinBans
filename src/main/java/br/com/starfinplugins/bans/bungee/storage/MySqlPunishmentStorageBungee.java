@@ -123,6 +123,20 @@ public class MySqlPunishmentStorageBungee implements PunishmentStorage, DupeLook
     }
 
     @Override
+    public void expireAllPunishmentsByIp(String ip, UUID staff, String staffName) {
+        if (ip == null || ip.isEmpty()) return;
+
+        String sql = "UPDATE punishments SET active = 0 WHERE ip = ? AND active = 1";
+        try (Connection conn = ds.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, ip);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().warning("MySQL expireAllPunishmentsByIp: " + e.getMessage());
+        }
+    }
+
+    @Override
     public Punishment getActiveBan(UUID target) {
         return getActivePunishmentByTarget(target, "BAN");
     }

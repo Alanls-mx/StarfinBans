@@ -18,6 +18,7 @@ public interface PunishmentStorage {
     void expirePunishmentByName(String targetName, PunishmentType type, UUID staff, String staffName);
 
     void expireAllPunishmentsByName(String targetName, UUID staff, String staffName);
+    void expireAllPunishmentsByIp(String ip, UUID staff, String staffName);
 
     Punishment getActiveBan(UUID target);
     Punishment getActiveMute(UUID target);

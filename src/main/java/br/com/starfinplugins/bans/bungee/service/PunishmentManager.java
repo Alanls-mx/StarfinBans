@@ -61,8 +61,7 @@ public class PunishmentManager implements PunishmentAPI {
         if (p == null) return;
 
         ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            storage.expireAllPunishmentsByName(p.getPlayerName(), staff, staffName);
-            web.sendExpire(p);
+            expireByNameAndIp(p, staff, staffName);
         });
     }
 
@@ -72,7 +71,17 @@ public class PunishmentManager implements PunishmentAPI {
         if (p == null) return;
 
         ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            storage.expireAllPunishmentsByName(targetName, staff, staffName);
+            expireByNameAndIp(p, staff, staffName);
+        });
+    }
+
+    @Override
+    public void unbanIp(String ip, UUID staff, String staffName) {
+        Punishment p = storage.getActiveIpBan(ip);
+        if (p == null) return;
+
+        ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
+            storage.expireAllPunishmentsByIp(ip, staff, staffName);
             web.sendExpire(p);
         });
     }
@@ -83,8 +92,7 @@ public class PunishmentManager implements PunishmentAPI {
         if (p == null) return;
 
         ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            storage.expireAllPunishmentsByName(p.getPlayerName(), staff, staffName);
-            web.sendExpire(p);
+            expireByNameAndIp(p, staff, staffName);
         });
     }
 
@@ -94,7 +102,17 @@ public class PunishmentManager implements PunishmentAPI {
         if (p == null) return;
 
         ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            storage.expireAllPunishmentsByName(targetName, staff, staffName);
+            expireByNameAndIp(p, staff, staffName);
+        });
+    }
+
+    @Override
+    public void unmuteIp(String ip, UUID staff, String staffName) {
+        Punishment p = storage.getActiveIpMute(ip);
+        if (p == null) return;
+
+        ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
+            storage.expireAllPunishmentsByIp(ip, staff, staffName);
             web.sendExpire(p);
         });
     }
@@ -105,9 +123,20 @@ public class PunishmentManager implements PunishmentAPI {
     @Override public Punishment getActiveBan(UUID target) { return storage.getActiveBan(target); }
     @Override public Punishment getActiveMute(UUID target) { return storage.getActiveMute(target); }
 
+    @Override public Punishment getActiveIpBan(String ip) { return storage.getActiveIpBan(ip); }
+    @Override public Punishment getActiveIpMute(String ip) { return storage.getActiveIpMute(ip); }
+
     @Override public Punishment getActiveBanByName(String targetName) { return storage.getActiveBanByName(targetName); }
     @Override public Punishment getActiveMuteByName(String targetName) { return storage.getActiveMuteByName(targetName); }
 
     @Override public List<Punishment> getHistory(UUID target) { return storage.getHistory(target); }
     @Override public List<Punishment> getHistoryByName(String targetName) { return storage.getHistoryByName(targetName); }
+
+    private void expireByNameAndIp(Punishment p, UUID staff, String staffName) {
+        storage.expireAllPunishmentsByName(p.getPlayerName(), staff, staffName);
+        if (p.getIp() != null && !p.getIp().isEmpty()) {
+            storage.expireAllPunishmentsByIp(p.getIp(), staff, staffName);
+        }
+        web.sendExpire(p);
+    }
 }
