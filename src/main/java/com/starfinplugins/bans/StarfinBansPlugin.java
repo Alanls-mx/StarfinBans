@@ -47,58 +47,40 @@ public class StarfinBansPlugin extends JavaPlugin {
     private FileConfiguration customConfig = null;
     private File customConfigFile = null;
 
-    // Essa variável é a chave que o StarfinLicense vai procurar (mantida)
-    private static final String STARFIN_KEY = "sf_9A7dF2KXQm8LrT6WZC4H1JY0bE5pVNUaS3xMOkcRDiGqPwfheI";
-
     // Novo ID produto interno (fixo)
     private static final String STARFIN_PRODUCT_ID = "starfin_bans";
 
     @Override
     public void onEnable() {
-        // Bloqueio imediato no onEnable se o core não existir/estiver desativado ou recusar a autorização
-        Plugin core = getServer().getPluginManager().getPlugin("StarfinLicense");
-        if (core == null || !core.isEnabled()) {
-            getLogger().log(Level.SEVERE, "StarfinLicense não encontrado ou desativado. Desabilitando plugin.");
-            getServer().getPluginManager().disablePlugin(this);
-            return;
-        }
-
-        // Tenta chamar canStart(this, STARFIN_PRODUCT_ID) por reflexão
-        try {
-            java.lang.reflect.Method targetMethod = null;
-            for (java.lang.reflect.Method m : core.getClass().getMethods()) {
-                if (m.getName().equals("canStart") && m.getParameterCount() == 2
-                        && m.getParameterTypes()[1] == String.class) {
-                    targetMethod = m;
-                    break;
+        Plugin core = getServer().getPluginManager().getPlugin("StarfinCore");
+        if (core != null && core.isEnabled()) {
+            // The first license check happens asynchronously. Never block Bukkit startup.
+            getLogger().info("StarfinCore detectado. Aguardando autorizacao para starfin_bans.");
+            new BukkitRunnable() {
+                private int attempts;
+                @Override public void run() {
+                    if (!isEnabled()) { cancel(); return; }
+                    if (checkLicense()) {
+                        cancel();
+                        initializeAuthorized();
+                    } else if (++attempts >= 90) {
+                        getLogger().severe("StarfinCore nao autorizou starfin_bans em 90 segundos.");
+                        cancel();
+                        Bukkit.getPluginManager().disablePlugin(StarfinBansPlugin.this);
+                    }
                 }
-            }
-
-            if (targetMethod == null) {
-                getLogger().log(Level.SEVERE, "StarfinLicense incompatível: método canStart(Plugin, String) não encontrado. Desabilitando plugin.");
-                getServer().getPluginManager().disablePlugin(this);
-                return;
-            }
-
-            Object result = targetMethod.invoke(core, this, STARFIN_PRODUCT_ID);
-            if (!(result instanceof Boolean)) {
-                getLogger().log(Level.SEVERE, "StarfinLicense.canStart retornou valor inválido. Desabilitando plugin.");
-                getServer().getPluginManager().disablePlugin(this);
-                return;
-            }
-
-            boolean canStart = (Boolean) result;
-            if (!canStart) {
-                getLogger().log(Level.SEVERE, "Licença inválida ou não autorizada pelo StarfinLicense. Desabilitando plugin.");
-                getServer().getPluginManager().disablePlugin(this);
-                return;
-            }
-        } catch (Exception ex) {
-            getLogger().log(Level.SEVERE, "Erro ao chamar StarfinLicense.canStart: " + ex.getMessage());
-            getServer().getPluginManager().disablePlugin(this);
+            }.runTaskTimer(this, 1L, 20L);
             return;
         }
+        if (!checkLicense()) {
+            getLogger().severe("StarfinLicense indisponivel ou nao autorizado.");
+            Bukkit.getPluginManager().disablePlugin(this);
+            return;
+        }
+        initializeAuthorized();
+    }
 
+    private void initializeAuthorized() {
         // Se passou na checagem inicial, inicializa o restante (inclui checagem periódica)
         if (!startSecuritySystem()) {
             Bukkit.getPluginManager().disablePlugin(this);
@@ -329,6 +311,20 @@ public class StarfinBansPlugin extends JavaPlugin {
      * @return true se autorizado, false caso contrário.
      */
     private boolean checkLicense() {
+        org.bukkit.plugin.Plugin core = Bukkit.getPluginManager().getPlugin("StarfinCore");
+        if (core != null && core.isEnabled()) {
+            try {
+                java.lang.reflect.Method method = core.getClass().getMethod(
+                        "canStart", org.bukkit.plugin.Plugin.class, String.class);
+                Object response = method.invoke(core, this, STARFIN_PRODUCT_ID);
+                this.licensed = Boolean.TRUE.equals(response);
+                return this.licensed;
+            } catch (ReflectiveOperationException error) {
+                this.licensed = false;
+                getLogger().warning("Contrato StarfinCore invalido: " + error.getClass().getSimpleName());
+                return false;
+            }
+        }
         org.bukkit.plugin.Plugin license = Bukkit.getPluginManager().getPlugin("StarfinLicense");
 
         if (license == null || !license.isEnabled()) {

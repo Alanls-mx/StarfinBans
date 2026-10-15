@@ -2,13 +2,12 @@
 name: StarfinBans
 version: 1.0.0
 main: com.starfinplugins.bans.StarfinBansPlugin
-api-version: 1.0.0
 authors: [StarfinPlugins]
 description: Sistema avançado de punições.
-website: https://starfinplugins.com
-depend:
-  - StarfinLicense
+website: https://starfinplugins.com.br
 softdepend:
+  - StarfinCore
+  - StarfinLicense
   - Vault
   - PlaceholderAPI
 commands:
