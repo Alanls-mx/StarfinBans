@@ -32,7 +32,7 @@ public class TempMuteCommand extends AbstractCommand {
 
         String reason = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
 
-        var online = CmdUtil.online(targetName);
+        net.md_5.bungee.api.connection.ProxiedPlayer online = CmdUtil.online(targetName);
         String ip = online != null ? online.getAddress().getAddress().getHostAddress() : null;
 
         boolean allowOffline = plugin.getCfg().getBoolean("options.allow-offline-punish", true);

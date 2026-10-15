@@ -21,7 +21,7 @@ public class UnbanCommand extends AbstractCommand {
         }
 
         String targetName = args[0];
-        var online = CmdUtil.online(targetName);
+        net.md_5.bungee.api.connection.ProxiedPlayer online = CmdUtil.online(targetName);
 
         if (online != null) {
             plugin.getPunishmentManager().unban(online.getUniqueId(), null, sender.getName());

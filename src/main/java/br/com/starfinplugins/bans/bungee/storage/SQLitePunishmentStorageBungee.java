@@ -88,6 +88,26 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
     // ---------------- ACTIVE (UUID) ----------------
 
     @Override
+    public Punishment getActiveIpBan(String ip) {
+        if (ip == null || ip.isEmpty()) return null;
+        String sql = "SELECT * FROM punishments WHERE ip = ? AND active = 1 " +
+                "AND type IN ('BAN_IP_PERMANENT', 'BAN_IP_TEMPORARY') " +
+                "ORDER BY created_at DESC LIMIT 1";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, ip);
+            try (ResultSet rows = statement.executeQuery()) {
+                if (rows.next()) {
+                    Punishment punishment = map(rows);
+                    return punishment.isExpired() ? null : punishment;
+                }
+            }
+        } catch (SQLException error) {
+            plugin.getLogger().warning("SQLite getActiveIpBan: " + error.getMessage());
+        }
+        return null;
+    }
+
+    @Override
     public Punishment getActiveBan(UUID target) {
         return getActivePunishmentByTarget(target, "BAN");
     }

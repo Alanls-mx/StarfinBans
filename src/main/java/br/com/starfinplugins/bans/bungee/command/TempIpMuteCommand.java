@@ -35,7 +35,7 @@ public class TempIpMuteCommand extends AbstractCommand {
         String ip = target;
         String name = target;
 
-        var online = CmdUtil.online(target);
+        net.md_5.bungee.api.connection.ProxiedPlayer online = CmdUtil.online(target);
         if (online != null) {
             ip = online.getAddress().getAddress().getHostAddress();
             name = online.getName();
@@ -55,7 +55,7 @@ public class TempIpMuteCommand extends AbstractCommand {
                 duration
         );
 
-        for (var p : ProxyServer.getInstance().getPlayers()) {
+        for (net.md_5.bungee.api.connection.ProxiedPlayer p : ProxyServer.getInstance().getPlayers()) {
             String pip = p.getAddress().getAddress().getHostAddress();
             if (ip.equals(pip)) {
                 String muted = plugin.msg().get("target.muted")

@@ -3,45 +3,34 @@ package br.com.starfinplugins.bans.bungee.storage;
 import br.com.starfinplugins.bans.bungee.StarfinBansBungeePlugin;
 import br.com.starfinplugins.bans.bungee.model.Punishment;
 import br.com.starfinplugins.bans.bungee.model.PunishmentType;
-import br.com.starfinplugins.bans.bungee.storage.PunishmentStorage;
-
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-
 import net.md_5.bungee.config.Configuration;
+import java.util.List;
+import java.util.UUID;
 
-import java.sql.*;
-import java.util.*;
-
-public class MySqlPunishmentStorageBungee implements PunishmentStorage {
-
-    private final StarfinBansBungeePlugin plugin;
-    private final HikariDataSource ds;
-
+/**
+ * The former class silently exposed an unimplemented MySQL backend.
+ * Refuse to initialize until transactional storage exists. Never pretend
+ * that punishment data was written successfully.
+ */
+public final class MySqlPunishmentStorageBungee implements PunishmentStorage {
     public MySqlPunishmentStorageBungee(StarfinBansBungeePlugin plugin, Configuration cfg) {
-        this.plugin = plugin;
-
-        String url = "jdbc:mysql://" + cfg.getString("mysql.host") + ":" +
-                cfg.getInt("mysql.port") + "/" +
-                cfg.getString("mysql.database") +
-                "?useSSL=" + cfg.getBoolean("mysql.use-ssl", false);
-
-        HikariConfig hc = new HikariConfig();
-        hc.setJdbcUrl(url);
-        hc.setUsername(cfg.getString("mysql.user"));
-        hc.setPassword(cfg.getString("mysql.password"));
-        hc.setMaximumPoolSize(cfg.getInt("mysql.pool-size", 10));
-
-        this.ds = new HikariDataSource(hc);
+        throw new UnsupportedOperationException(
+            "MySQL Bungee ainda nao foi implementado. Use SQLite com backup ou desative este modulo.");
     }
-
-    @Override
-    public void init() {}
-
-    @Override
-    public void close() {
-        ds.close();
+    private UnsupportedOperationException unsupported() {
+        return new UnsupportedOperationException("Bungee MySQL indisponivel");
     }
-
-    // ⚠️ Demais métodos seguem sua interface PunishmentStorage
+    @Override public void init() { throw unsupported(); }
+    @Override public void close() { }
+    @Override public void createPunishment(Punishment value) { throw unsupported(); }
+    @Override public void expirePunishment(UUID id, PunishmentType type, UUID staff, String staffName) { throw unsupported(); }
+    @Override public void expirePunishmentByName(String name, PunishmentType type, UUID staff, String staffName) { throw unsupported(); }
+    @Override public void expireAllPunishmentsByName(String name, UUID staff, String staffName) { throw unsupported(); }
+    @Override public Punishment getActiveBan(UUID id) { throw unsupported(); }
+    @Override public Punishment getActiveIpBan(String ip) { throw unsupported(); }
+    @Override public Punishment getActiveMute(UUID id) { throw unsupported(); }
+    @Override public Punishment getActiveBanByName(String name) { throw unsupported(); }
+    @Override public Punishment getActiveMuteByName(String name) { throw unsupported(); }
+    @Override public List<Punishment> getHistory(UUID id) { throw unsupported(); }
+    @Override public List<Punishment> getHistoryByName(String name) { throw unsupported(); }
 }

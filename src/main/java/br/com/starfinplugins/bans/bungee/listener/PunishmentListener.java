@@ -48,7 +48,7 @@ public class PunishmentListener implements Listener {
                 .replace("%expires%", duration);
 
         event.setCancelled(true);
-        event.setCancelReason(new TextComponent(TextUtil.tc(layout)));
+        event.setCancelReason(layout);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

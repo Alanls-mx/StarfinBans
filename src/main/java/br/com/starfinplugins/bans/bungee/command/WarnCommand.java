@@ -28,7 +28,7 @@ public class WarnCommand extends AbstractCommand {
         String targetName = args[0];
         String reason = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
 
-        var online = CmdUtil.online(targetName);
+        net.md_5.bungee.api.connection.ProxiedPlayer online = CmdUtil.online(targetName);
 
         boolean allowOffline = plugin.getCfg().getBoolean("options.allow-offline-punish", true);
         if (online == null && !allowOffline) {

@@ -26,7 +26,7 @@ public class KickCommand extends AbstractCommand {
         }
 
         String targetName = args[0];
-        var target = CmdUtil.online(targetName);
+        net.md_5.bungee.api.connection.ProxiedPlayer target = CmdUtil.online(targetName);
 
         if (target == null) {
             msg(sender, plugin.msg().get("general.player-not-found").replace("%player%", targetName));

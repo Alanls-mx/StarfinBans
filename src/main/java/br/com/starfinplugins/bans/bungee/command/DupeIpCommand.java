@@ -37,7 +37,7 @@ public class DupeIpCommand extends AbstractCommand {
 
             DupeLookupStorage dupeStorage = (DupeLookupStorage) plugin.getStorage();
 
-            var p = CmdUtil.online(input);
+            net.md_5.bungee.api.connection.ProxiedPlayer p = CmdUtil.online(input);
             if (p != null) {
                 ip = p.getAddress().getAddress().getHostAddress();
             } else if (!CmdUtil.looksLikeIp(ip)) {
@@ -60,7 +60,7 @@ public class DupeIpCommand extends AbstractCommand {
             }
 
             for (String alt : alts) {
-                var altP = CmdUtil.online(alt);
+                net.md_5.bungee.api.connection.ProxiedPlayer altP = CmdUtil.online(alt);
                 boolean onlineAlt = altP != null;
                 String status = onlineAlt ? "§aOnline" : "§cOffline";
 

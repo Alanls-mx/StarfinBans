@@ -55,6 +55,19 @@ public class MemoryPunishmentStorageBungee implements PunishmentStorage {
     }
 
     @Override
+    public Punishment getActiveIpBan(String ip) {
+        if (ip == null || ip.isEmpty()) return null;
+        for (Punishment punishment : punishments) {
+            if (punishment.isActive() && !punishment.isExpired() &&
+                    ip.equals(punishment.getIp()) &&
+                    (punishment.getType() == PunishmentType.BAN_IP_PERMANENT ||
+                     punishment.getType() == PunishmentType.BAN_IP_TEMPORARY))
+                return punishment;
+        }
+        return null;
+    }
+
+    @Override
     public Punishment getActiveBan(UUID target) {
         return punishments.stream()
                 .filter(p -> p.isActive()
