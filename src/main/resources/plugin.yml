@@ -5,9 +5,9 @@ main: com.starfinplugins.bans.StarfinBansPlugin
 authors: [StarfinPlugins]
 description: Sistema avançado de punições.
 website: https://starfinplugins.com.br
-softdepend:
+depend:
   - StarfinCore
-  - StarfinLicense
+softdepend:
   - Vault
   - PlaceholderAPI
 commands:

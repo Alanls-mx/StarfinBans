@@ -20,6 +20,7 @@ public class PunishmentListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onLogin(AsyncPlayerPreLoginEvent event) {
+        if (!plugin.isLicensed()) return;
         // 1. Verifica Ban por UUID (Banimento direto no jogador)
         Punishment ban = plugin.getStorage().getActiveBan(event.getUniqueId());
 
@@ -68,6 +69,7 @@ public class PunishmentListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onChat(AsyncPlayerChatEvent event) {
+        if (!plugin.isLicensed()) return;
         // 1. Verifica Mute por UUID
         Punishment mute = plugin.getStorage().getActiveMute(event.getPlayer().getUniqueId());
 

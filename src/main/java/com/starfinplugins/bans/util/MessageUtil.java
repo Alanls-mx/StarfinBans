@@ -19,20 +19,22 @@ public class MessageUtil {
     }
 
     public String get(String path) {
-        if (!config.contains(path)) return "§cMessage not found: " + path;
-        return ChatColor.translateAlternateColorCodes('&', config.getString(path));
+        String value = config.getString(path);
+        if (value == null) return ChatColor.RED + "Message not found: " + path;
+        String prefix = config.getString("prefix", "&9&lSTARFINPLUGINS &8» &r");
+        return ChatColor.translateAlternateColorCodes('&', value.replace("%prefix%", prefix));
     }
 
     public String getRaw(String path) {
-        if (!config.contains(path)) return "§cMessage not found: " + path;
-        return ChatColor.translateAlternateColorCodes('&', config.getString(path));
+        return get(path);
     }
 
     public String getLayout(String path) {
         if (!config.contains(path)) return "§cLayout not found: " + path;
         List<String> lines = config.getStringList(path);
+        String prefix = config.getString("prefix", "&9&lSTARFINPLUGINS &8» &r");
         return lines.stream()
-                .map(line -> ChatColor.translateAlternateColorCodes('&', line))
+                .map(line -> ChatColor.translateAlternateColorCodes('&', line.replace("%prefix%", prefix)))
                 .collect(Collectors.joining("\n"));
     }
 

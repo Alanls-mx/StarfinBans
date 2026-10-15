@@ -5,6 +5,7 @@ import com.starfinplugins.bans.api.PunishmentAPI;
 import com.starfinplugins.bans.command.*;
 import com.starfinplugins.bans.hook.VaultHook;
 import com.starfinplugins.bans.listener.PunishmentListener;
+import com.starfinplugins.bans.license.CoreAuthorization;
 import com.starfinplugins.bans.placeholder.StarfinBansPlaceholderExpansion;
 import com.starfinplugins.bans.service.PunishmentManager;
 import com.starfinplugins.bans.storage.MemoryPunishmentStorage;
@@ -14,6 +15,9 @@ import com.starfinplugins.bans.storage.SQLitePunishmentStorage;
 import com.starfinplugins.bans.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.Command;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
@@ -41,61 +45,44 @@ public class StarfinBansPlugin extends JavaPlugin {
     private VaultHook vaultHook;
 
     private boolean lockdown = false;
-    private boolean licensed = false;
+    private volatile boolean licensed = false;
+    private volatile boolean initialized;
+    private Plugin corePlugin;
 
     // Configuração personalizada para evitar problemas de encoding e o aviso do console
     private FileConfiguration customConfig = null;
     private File customConfigFile = null;
 
     // Novo ID produto interno (fixo)
-    private static final String STARFIN_PRODUCT_ID = "starfin_bans";
-
     @Override
     public void onEnable() {
-        Plugin core = getServer().getPluginManager().getPlugin("StarfinCore");
-        if (core != null && core.isEnabled()) {
-            // The first license check happens asynchronously. Never block Bukkit startup.
-            getLogger().info("StarfinCore detectado. Aguardando autorizacao para starfin_bans.");
-            new BukkitRunnable() {
-                private int attempts;
-                @Override public void run() {
-                    if (!isEnabled()) { cancel(); return; }
-                    if (checkLicense()) {
-                        cancel();
-                        initializeAuthorized();
-                    } else if (++attempts >= 90) {
-                        getLogger().severe("StarfinCore nao autorizou starfin_bans em 90 segundos.");
-                        cancel();
-                        Bukkit.getPluginManager().disablePlugin(StarfinBansPlugin.this);
-                    }
-                }
-            }.runTaskTimer(this, 1L, 20L);
-            return;
-        }
-        if (!checkLicense()) {
-            getLogger().severe("StarfinLicense indisponivel ou nao autorizado.");
-            Bukkit.getPluginManager().disablePlugin(this);
-            return;
-        }
-        initializeAuthorized();
+        saveDefaultConfig();
+        validateAndLoadMessages();
+        registerCommands();
+        corePlugin = getServer().getPluginManager().getPlugin("StarfinCore");
+        if (corePlugin == null || !corePlugin.isEnabled()) logLicense("license.core-missing", Level.WARNING);
+        else logLicense("license.pending", Level.INFO);
+        new BukkitRunnable() {
+            @Override public void run() {
+                if (!isEnabled()) { cancel(); return; }
+                boolean allowed = checkLicense();
+                if (allowed && !initialized) initializeAuthorized();
+                else if (allowed && !licensed) logLicense("license.recovered", Level.INFO);
+                else if (!allowed && licensed) logLicense("license.suspended", Level.WARNING);
+                licensed = allowed;
+            }
+        }.runTaskTimer(this, 1L, 20L);
     }
 
     private void initializeAuthorized() {
         // Se passou na checagem inicial, inicializa o restante (inclui checagem periódica)
-        if (!startSecuritySystem()) {
-            Bukkit.getPluginManager().disablePlugin(this);
-            return;
-        }
+        if (!checkLicense()) return;
 
         instance = this;
         long startTime = System.currentTimeMillis();
 
         // Banner de Inicialização
-        Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "=============================================");
-        Bukkit.getConsoleSender().sendMessage(ChatColor.GOLD + "           StarfinBans v" + getDescription().getVersion());
-        Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "      Desenvolvido por StarfinPlugins");
-        Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "      Acesse nosso site: https://starfinplugins.com");
-        Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "=============================================");
+        logLicense("license.authorized", Level.INFO);
 
         try {
             saveDefaultConfig();
@@ -119,12 +106,12 @@ public class StarfinBansPlugin extends JavaPlugin {
             vaultHook = new VaultHook();
             setupHooks();
 
-            registerCommands();
             Bukkit.getPluginManager().registerEvents(new PunishmentListener(this), this);
 
             long timeTaken = System.currentTimeMillis() - startTime;
-            Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "  Plugin habilitado com sucesso em " + timeTaken + "ms!");
-            Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "=============================================");
+            initialized = true;
+            licensed = true;
+            getLogger().info(ChatColor.stripColor(messageUtil.get("license.initialized").replace("%ms%", String.valueOf(timeTaken))));
 
         } catch (Exception e) {
             Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "ERRO CRÍTICO: " + e.getMessage());
@@ -135,8 +122,10 @@ public class StarfinBansPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        licensed = false;
+        initialized = false;
         if (storage != null) storage.close();
-        Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] Plugin desabilitado.");
+        getLogger().info("STARFINPLUGINS | STARFINBANS: desabilitado.");
     }
 
     // --- Sobrescrita do Sistema de Configuração para Corrigir Encoding ---
@@ -196,67 +185,57 @@ public class StarfinBansPlugin extends JavaPlugin {
 
     private void validateAndLoadMessages() {
         File file = new File(getDataFolder(), "messages.yml");
-        if (!file.exists()) {
-            saveResource("messages.yml", false);
-        }
-
-        FileConfiguration currentMessages = YamlConfiguration.loadConfiguration(file);
-
-        // Carrega o arquivo padrão interno para comparação
-        Reader defConfigStream = new InputStreamReader(getResource("messages.yml"), StandardCharsets.UTF_8);
-        FileConfiguration defaultMessages = YamlConfiguration.loadConfiguration(defConfigStream);
-
-        // Verifica se todas as chaves padrão existem no arquivo atual
-        Set<String> defaultKeys = defaultMessages.getKeys(true);
-        boolean hasMissingKeys = false;
-
-        for (String key : defaultKeys) {
-            if (!currentMessages.contains(key)) {
-                Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] Erro no messages.yml: Chave faltando -> " + key);
-                hasMissingKeys = true;
+        if (!file.exists()) saveResource("messages.yml", false);
+        try {
+            YamlConfiguration defaults = new YamlConfiguration();
+            try (Reader reader = new InputStreamReader(getResource("messages.yml"), StandardCharsets.UTF_8)) {
+                defaults.load(reader);
+            }
+            YamlConfiguration configured = new YamlConfiguration();
+            configured.load(file);
+            configured.setDefaults(defaults);
+            messageUtil = new MessageUtil(configured);
+        } catch (Exception error) {
+            getLogger().warning("STARFINPLUGINS | STARFINBANS: messages.yml invalido; mensagens anteriores mantidas.");
+            if (messageUtil == null) {
+                messageUtil = new MessageUtil(YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(getResource("messages.yml"), StandardCharsets.UTF_8)));
             }
         }
-
-        if (hasMissingKeys) {
-            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] O arquivo messages.yml está desatualizado ou corrompido.");
-            Bukkit.getConsoleSender().sendMessage(ChatColor.YELLOW + "[StarfinBans] Criando backup e regenerando arquivo padrão...");
-
-            try {
-                String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-                File backup = new File(getDataFolder(), "messages_backup_" + timestamp + ".yml");
-                Files.copy(file.toPath(), backup.toPath());
-                // Re-salva o recurso padrão
-                saveResource("messages.yml", true);
-            } catch (IOException e) {
-                Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] Falha ao criar backup do messages.yml: " + e.getMessage());
-                e.printStackTrace();
-            }
-        }
-
-        this.messageUtil = new MessageUtil(currentMessages);
+    }
+    private void registerCommands() {
+        registerProtected("ban", new BanCommand(this));
+        registerProtected("tempban", new TempBanCommand(this));
+        registerProtected("ipban", new IpBanCommand(this));
+        registerProtected("tempipban", new TempIpBanCommand(this));
+        registerProtected("mute", new MuteCommand(this));
+        registerProtected("tempmute", new TempMuteCommand(this));
+        registerProtected("ipmute", new IpMuteCommand(this));
+        registerProtected("tempipmute", new TempIpMuteCommand(this));
+        registerProtected("warn", new WarnCommand(this));
+        registerProtected("kick", new KickCommand(this));
+        registerProtected("unban", new UnbanCommand(this));
+        registerProtected("unmute", new UnmuteCommand(this));
+        registerProtected("unwarn", new UnwarnCommand(this));
+        registerProtected("history", new HistoryCommand(this));
+        registerProtected("checkban", new CheckCommand(this, "ban"));
+        registerProtected("checkmute", new CheckCommand(this, "mute"));
+        registerProtected("dupeip", new DupeIpCommand(this));
+        registerProtected("changereason", new ChangeReasonCommand(this));
+        registerProtected("starfinbans", new AdminCommand(this));
+        registerProtected("help", new HelpCommand(this));
     }
 
-    private void registerCommands() {
-        getCommand("ban").setExecutor(new BanCommand(this));
-        getCommand("tempban").setExecutor(new TempBanCommand(this));
-        getCommand("ipban").setExecutor(new IpBanCommand(this));
-        getCommand("tempipban").setExecutor(new TempIpBanCommand(this));
-        getCommand("mute").setExecutor(new MuteCommand(this));
-        getCommand("tempmute").setExecutor(new TempMuteCommand(this));
-        getCommand("ipmute").setExecutor(new IpMuteCommand(this));
-        getCommand("tempipmute").setExecutor(new TempIpMuteCommand(this));
-        getCommand("warn").setExecutor(new WarnCommand(this));
-        getCommand("kick").setExecutor(new KickCommand(this));
-        getCommand("unban").setExecutor(new UnbanCommand(this));
-        getCommand("unmute").setExecutor(new UnmuteCommand(this));
-        getCommand("unwarn").setExecutor(new UnwarnCommand(this));
-        getCommand("history").setExecutor(new HistoryCommand(this));
-        getCommand("checkban").setExecutor(new CheckCommand(this, "ban"));
-        getCommand("checkmute").setExecutor(new CheckCommand(this, "mute"));
-        getCommand("dupeip").setExecutor(new DupeIpCommand(this));
-        getCommand("changereason").setExecutor(new ChangeReasonCommand(this));
-        getCommand("starfinbans").setExecutor(new AdminCommand(this));
-        getCommand("help").setExecutor(new HelpCommand(this));
+    private void registerProtected(String name, final CommandExecutor delegate) {
+        getCommand(name).setExecutor(new CommandExecutor() {
+            @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+                if (!isLicensed()) {
+                    sender.sendMessage(messageUtil.get("license.blocked"));
+                    return true;
+                }
+                return delegate.onCommand(sender, command, label, args);
+            }
+        });
     }
 
     private void setupHooks() {
@@ -275,124 +254,15 @@ public class StarfinBansPlugin extends JavaPlugin {
     public VaultHook getVaultHook() { return vaultHook; }
     public boolean isLockdown() { return lockdown; }
     public void setLockdown(boolean lockdown) { this.lockdown = lockdown; }
-    public boolean isLicensed() { return licensed; }
+    public boolean isLicensed() { return initialized && checkLicense(); }
+    private void logLicense(String key, Level level) {
+        getLogger().log(level, ChatColor.stripColor(messageUtil.get(key)));
+    }
 
     /**
      * Inicializa os sistemas de segurança.
      * @return true se a verificação inicial passar, false caso contrário.
      */
-    private boolean startSecuritySystem() {
-        // Primeira verificação imediata
-        if (!checkLicense()) return false;
-
-        // Verificação periódica a cada 5 minutos (6000 ticks) para evitar bypass em tempo de execução
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (!isEnabled()) {
-                    cancel();
-                    return;
-                }
-
-                if (!checkLicense()) {
-                    Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] Violação de segurança detectada (Runtime Check). O StarfinLicense parou de responder ou foi alterado.");
-                    Bukkit.getPluginManager().disablePlugin(StarfinBansPlugin.this);
-                    cancel();
-                }
-            }
-        }.runTaskTimer(this, 6000L, 6000L); // 5 minutos
-
-        return true;
-    }
-
-    /**
-     * Verifica se o plugin pode iniciar consultando o StarfinLicense.
-     * Tenta primeiro a assinatura canStart(Plugin, String) e depois fallback para canStart(Plugin).
-     * @return true se autorizado, false caso contrário.
-     */
     private boolean checkLicense() {
-        org.bukkit.plugin.Plugin core = Bukkit.getPluginManager().getPlugin("StarfinCore");
-        if (core != null && core.isEnabled()) {
-            try {
-                java.lang.reflect.Method method = core.getClass().getMethod(
-                        "canStart", org.bukkit.plugin.Plugin.class, String.class);
-                Object response = method.invoke(core, this, STARFIN_PRODUCT_ID);
-                this.licensed = Boolean.TRUE.equals(response);
-                return this.licensed;
-            } catch (ReflectiveOperationException error) {
-                this.licensed = false;
-                getLogger().warning("Contrato StarfinCore invalido: " + error.getClass().getSimpleName());
-                return false;
-            }
-        }
-        org.bukkit.plugin.Plugin license = Bukkit.getPluginManager().getPlugin("StarfinLicense");
-
-        if (license == null || !license.isEnabled()) {
-            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] StarfinLicense não encontrado ou desativado.");
-            this.licensed = false;
-            return false;
-        }
-
-        // Anti-Spoofing: Verifica se o plugin StarfinLicense é genuíno checando os autores
-        List<String> authors = license.getDescription().getAuthors();
-        if (!authors.contains("StarfinPlugins")) {
-            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] Plugin de licença inválido detectado! (Author Spoofing Check Failed)");
-            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] Esperado: StarfinPlugins, Encontrado: " + authors);
-            this.licensed = false;
-            return false;
-        }
-
-        try {
-            // Primeiro tenta canStart(Plugin, String)
-            java.lang.reflect.Method method2 = null;
-            for (java.lang.reflect.Method m : license.getClass().getMethods()) {
-                if (m.getName().equals("canStart") && m.getParameterCount() == 2
-                        && m.getParameterTypes()[1] == String.class) {
-                    method2 = m;
-                    break;
-                }
-            }
-
-            if (method2 != null) {
-                boolean authorized = (boolean) method2.invoke(license, this, STARFIN_PRODUCT_ID);
-                if (!authorized) {
-                    Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] StarfinLicense recusou a autorização.");
-                    this.licensed = false;
-                    return false;
-                }
-                this.licensed = true;
-                return true;
-            }
-
-            // Fallback: canStart(Plugin)
-            java.lang.reflect.Method method1 = null;
-            for (java.lang.reflect.Method m : license.getClass().getMethods()) {
-                if (m.getName().equals("canStart") && m.getParameterCount() == 1) {
-                    method1 = m;
-                    break;
-                }
-            }
-
-            if (method1 != null) {
-                boolean authorized = (boolean) method1.invoke(license, this);
-                if (!authorized) {
-                    Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] StarfinLicense recusou a autorização.");
-                    this.licensed = false;
-                    return false;
-                }
-                this.licensed = true;
-                return true;
-            }
-
-            // Nenhuma assinatura encontrada -> incompatível
-            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] Método de verificação não encontrado no StarfinLicense (canStart). Versão incompatível?");
-            this.licensed = false;
-            return false;
-        } catch (Exception e) {
-            Bukkit.getConsoleSender().sendMessage(ChatColor.RED + "[StarfinBans] Erro ao verificar licença: " + e.getMessage());
-            e.printStackTrace();
-            this.licensed = false;
-            return false;
-        }
-    }
-}
+        return CoreAuthorization.permitted(corePlugin, this);
+    }}

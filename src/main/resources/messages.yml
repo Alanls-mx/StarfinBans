@@ -1,4 +1,12 @@
-prefix: "&8[&5StarfinBans&8] &r"
+prefix: "&9&lSTARFINPLUGINS &8» &r"
+license:
+  blocked: "%prefix%&cStarfinBans bloqueado: produto starfin_bans sem autorizacao atual."
+  core-missing: "%prefix%&cStarfinCore ausente; recursos protegidos indisponiveis."
+  pending: "%prefix%&eAguardando autorizacao para starfin_bans."
+  authorized: "%prefix%&aProduto starfin_bans autorizado; inicializando."
+  suspended: "%prefix%&cAutorizacao revogada; recursos protegidos bloqueados."
+  recovered: "%prefix%&aAutorizacao recuperada; recursos protegidos liberados."
+  initialized: "%prefix%&aInicializacao concluida em %ms%ms."
 
 # Mensagens de Erro e Uso
 general:

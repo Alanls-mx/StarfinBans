@@ -24,6 +24,7 @@ public class PunishmentManager implements PunishmentAPI { // Implementação exp
 
     @Override
     public void punish(UUID target, String targetName, String ip, UUID staff, String staffName, PunishmentType type, String reason, Long duration) {
+        requireAuthorization();
         long createdAt = System.currentTimeMillis();
         long expires = (duration != null && duration > 0) ? createdAt + duration : -1;
 
@@ -48,13 +49,16 @@ public class PunishmentManager implements PunishmentAPI { // Implementação exp
 
         // Salva no banco de dados de forma assíncrona
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            if (!plugin.isLicensed()) return;
             storage.createPunishment(punishment);
         });
     }
 
     @Override
     public void unban(UUID target, UUID staff, String staffName) {
+        requireAuthorization();
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            if (!plugin.isLicensed()) return;
             storage.expirePunishment(target, PunishmentType.BAN_PERMANENT, staff, staffName);
             storage.expirePunishment(target, PunishmentType.BAN_TEMPORARY, staff, staffName);
             storage.expirePunishment(target, PunishmentType.BAN_IP_PERMANENT, staff, staffName);
@@ -69,7 +73,9 @@ public class PunishmentManager implements PunishmentAPI { // Implementação exp
 
     @Override
     public void unmute(UUID target, UUID staff, String staffName) {
+        requireAuthorization();
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            if (!plugin.isLicensed()) return;
             storage.expirePunishment(target, PunishmentType.MUTE_PERMANENT, staff, staffName);
             storage.expirePunishment(target, PunishmentType.MUTE_TEMPORARY, staff, staffName);
             storage.expirePunishment(target, PunishmentType.MUTE_IP_PERMANENT, staff, staffName);
@@ -84,16 +90,23 @@ public class PunishmentManager implements PunishmentAPI { // Implementação exp
 
     @Override
     public boolean isBanned(UUID target) {
+        requireAuthorization();
         return storage.getActiveBan(target) != null;
     }
 
     @Override
     public boolean isMuted(UUID target) {
+        requireAuthorization();
         return storage.getActiveMute(target) != null;
     }
 
     @Override
     public List<Punishment> getHistory(UUID target) {
+        requireAuthorization();
         return storage.getHistory(target);
+    }
+
+    private void requireAuthorization() {
+        if (!plugin.isLicensed()) throw new IllegalStateException("starfin_bans nao autorizado pelo StarfinCore");
     }
 }

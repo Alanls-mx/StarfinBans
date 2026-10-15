@@ -22,7 +22,7 @@ public class StarfinBansPlaceholderExpansion extends PlaceholderExpansion {
 
     @Override
     public String onPlaceholderRequest(Player player, String identifier) {
-        if (player == null) return "";
+        if (player == null || !plugin.isLicensed()) return "";
         if (identifier.equals("banned")) return String.valueOf(plugin.getPunishmentAPI().isBanned(player.getUniqueId()));
         if (identifier.equals("muted")) return String.valueOf(plugin.getPunishmentAPI().isMuted(player.getUniqueId()));
         return null;
