@@ -17,7 +17,7 @@ public class BanCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (sender instanceof Player && !plugin.getVaultHook().hasPermission((Player)sender, "starfinbans.ban")) {
+        if (!sender.hasPermission("starfinbans.ban")) {
             sender.sendMessage(plugin.getMessageUtil().get("permissions.no-permission-general"));
             return true;
         }

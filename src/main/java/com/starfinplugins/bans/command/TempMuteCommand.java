@@ -18,7 +18,7 @@ public class TempMuteCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (sender instanceof Player && !plugin.getVaultHook().hasPermission((Player)sender, "starfinbans.tempmute")) {
+        if (!sender.hasPermission("starfinbans.tempmute")) {
             sender.sendMessage(plugin.getMessageUtil().get("permissions.no-permission-general"));
             return true;
         }

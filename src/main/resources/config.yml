@@ -6,16 +6,17 @@ storage-type: "sqlite"
 database:
   host: "localhost"
   port: 3306
-  database: "punishments"
-  user: "root"
-  password: "password"
+  database: "starfinbans"
+  user: "starfinbans"
+  password: ""
   use-ssl: false
-  pool-size: 10
+  pool-size: 5
+  connection-timeout: 10000
 
 web-api:
   enabled: false
-  base-url: "https://meupainel.com/api/punishments"
-  api-key: "MINHA_CHAVE_SECRETA"
+  base-url: ""
+  api-key: ""
   timeout: 5000
   send-on-create: true
   send-on-update: true
@@ -27,7 +28,3 @@ options:
   broadcast-mutes: false
   # Se true, bloqueia login se o IP estiver banido, mesmo que o Nick seja diferente
   block-ip-on-login: true
-
-vault:
-  use-permissions: true
-  use-economy: false

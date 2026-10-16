@@ -27,7 +27,7 @@ public class ChangeReasonCommand implements CommandExecutor {
         try {
             id = Integer.parseInt(args[0]);
         } catch (NumberFormatException e) {
-            sender.sendMessage("§cID inválido.");
+            sender.sendMessage("§cID invalido.");
             return true;
         }
 
@@ -35,7 +35,7 @@ public class ChangeReasonCommand implements CommandExecutor {
 
         // TODO: Implementar updateReason(int id, String reason) no PunishmentStorage
         // plugin.getStorage().updateReason(id, newReason);
-        sender.sendMessage("§cFuncionalidade changereason requer implementação no Storage (aguardando atualização).");
+        sender.sendMessage("§cFuncionalidade changereason requer implementacao no Storage (aguardando atualizacao).");
 
         /*
         // Código futuro quando Storage suportar:

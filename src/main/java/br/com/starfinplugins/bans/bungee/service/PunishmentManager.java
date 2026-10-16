@@ -57,57 +57,121 @@ public class PunishmentManager implements PunishmentAPI {
 
     @Override
     public void unban(UUID target, UUID staff, String staffName) {
-        Punishment p = storage.getActiveBan(target);
-        if (p == null) return;
-
         ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            storage.expireAllPunishmentsByName(p.getPlayerName(), staff, staffName);
-            web.sendExpire(p);
+            List<Punishment> history = storage.getHistory(target);
+            expireByUuid(target, history, true, staff, staffName);
         });
     }
 
     @Override
     public void unbanByName(String targetName, UUID staff, String staffName) {
-        Punishment p = storage.getActiveBanByName(targetName);
-        if (p == null) return;
-
-        ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            storage.expireAllPunishmentsByName(targetName, staff, staffName);
-            web.sendExpire(p);
-        });
+        ProxyServer.getInstance().getScheduler().runAsync(plugin,
+                () -> expireByName(targetName, true, staff, staffName));
     }
 
     @Override
     public void unmute(UUID target, UUID staff, String staffName) {
-        Punishment p = storage.getActiveMute(target);
-        if (p == null) return;
-
         ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            storage.expireAllPunishmentsByName(p.getPlayerName(), staff, staffName);
-            web.sendExpire(p);
+            List<Punishment> history = storage.getHistory(target);
+            expireByUuid(target, history, false, staff, staffName);
         });
     }
 
     @Override
     public void unmuteByName(String targetName, UUID staff, String staffName) {
-        Punishment p = storage.getActiveMuteByName(targetName);
-        if (p == null) return;
-
-        ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            storage.expireAllPunishmentsByName(targetName, staff, staffName);
-            web.sendExpire(p);
-        });
+        ProxyServer.getInstance().getScheduler().runAsync(plugin,
+                () -> expireByName(targetName, false, staff, staffName));
     }
 
-    @Override public boolean isBanned(UUID target) { return storage.getActiveBan(target) != null; }
-    @Override public boolean isMuted(UUID target) { return storage.getActiveMute(target) != null; }
+    private void expireByName(String targetName, boolean ban, UUID staff, String staffName) {
+        if (targetName == null || targetName.isEmpty()) return;
 
-    @Override public Punishment getActiveBan(UUID target) { return storage.getActiveBan(target); }
-    @Override public Punishment getActiveMute(UUID target) { return storage.getActiveMute(target); }
+        List<Punishment> history = storage.getHistoryByName(targetName);
+        Punishment latestActive = latestActive(history, ban);
+        for (PunishmentType type : typesFor(ban)) {
+            storage.expirePunishmentByName(targetName, type, staff, staffName);
+        }
+        sendExpire(latestActive);
+    }
 
-    @Override public Punishment getActiveBanByName(String targetName) { return storage.getActiveBanByName(targetName); }
-    @Override public Punishment getActiveMuteByName(String targetName) { return storage.getActiveMuteByName(targetName); }
+    private void expireByUuid(UUID target, List<Punishment> history, boolean ban, UUID staff, String staffName) {
+        if (target == null) return;
+        Punishment latestActive = latestActive(history, ban);
+        for (PunishmentType type : typesFor(ban)) {
+            storage.expirePunishment(target, type, staff, staffName);
+        }
+        sendExpire(latestActive);
+    }
 
-    @Override public List<Punishment> getHistory(UUID target) { return storage.getHistory(target); }
-    @Override public List<Punishment> getHistoryByName(String targetName) { return storage.getHistoryByName(targetName); }
+    private Punishment latestActive(List<Punishment> history, boolean ban) {
+        Punishment latestActive = null;
+        for (Punishment punishment : history) {
+            String type = punishment.getType().name();
+            boolean matches = ban ? type.startsWith("BAN_") : type.startsWith("MUTE_");
+            if (matches && punishment.isActive() && !punishment.isExpired()
+                    && (latestActive == null || punishment.getCreatedAt() > latestActive.getCreatedAt())) {
+                latestActive = punishment;
+            }
+        }
+        return latestActive;
+    }
+
+    private PunishmentType[] typesFor(boolean ban) {
+        return ban
+                ? new PunishmentType[]{
+                PunishmentType.BAN_PERMANENT, PunishmentType.BAN_TEMPORARY,
+                PunishmentType.BAN_IP_PERMANENT, PunishmentType.BAN_IP_TEMPORARY
+        }
+                : new PunishmentType[]{
+                PunishmentType.MUTE_PERMANENT, PunishmentType.MUTE_TEMPORARY,
+                PunishmentType.MUTE_IP_PERMANENT, PunishmentType.MUTE_IP_TEMPORARY
+        };
+    }
+
+    private void sendExpire(Punishment latestActive) {
+        if (latestActive != null) {
+            latestActive.setActive(false);
+            web.sendExpire(latestActive);
+        }
+    }
+
+    @Override
+    public boolean isBanned(UUID target) {
+        return storage.getActiveBan(target) != null;
+    }
+
+    @Override
+    public boolean isMuted(UUID target) {
+        return storage.getActiveMute(target) != null;
+    }
+
+    @Override
+    public Punishment getActiveBan(UUID target) {
+        return storage.getActiveBan(target);
+    }
+
+    @Override
+    public Punishment getActiveMute(UUID target) {
+        return storage.getActiveMute(target);
+    }
+
+    @Override
+    public Punishment getActiveBanByName(String targetName) {
+        return storage.getActiveBanByName(targetName);
+    }
+
+    @Override
+    public Punishment getActiveMuteByName(String targetName) {
+        return storage.getActiveMuteByName(targetName);
+    }
+
+    @Override
+    public List<Punishment> getHistory(UUID target) {
+        return storage.getHistory(target);
+    }
+
+    @Override
+    public List<Punishment> getHistoryByName(String targetName) {
+        return storage.getHistoryByName(targetName);
+    }
 }

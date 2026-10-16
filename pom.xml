@@ -10,7 +10,7 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>CrzPunishments</name>
+    <name>StarfinBans</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -20,10 +20,9 @@
         <!-- versões -->
         <bungeecord.version>1.8-SNAPSHOT</bungeecord.version>
         <sqlite.jdbc.version>3.46.1.0</sqlite.jdbc.version>
-        <okhttp.version>4.12.0</okhttp.version>
-
         <hikari.version>4.0.3</hikari.version>
         <mysql.driver.version>8.4.0</mysql.driver.version>
+        <junit.version>4.13.2</junit.version>
     </properties>
 
     <repositories>
@@ -37,12 +36,6 @@
         <repository>
             <id>placeholderapi</id>
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
-        </repository>
-
-        <!-- Vault Repo (JitPack) -->
-        <repository>
-            <id>vault-repo</id>
-            <url>https://jitpack.io</url>
         </repository>
 
         <!-- BungeeCord API snapshots -->
@@ -69,14 +62,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Vault API -->
-        <dependency>
-            <groupId>com.github.MilkBowl</groupId>
-            <artifactId>VaultAPI</artifactId>
-            <version>1.7</version>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- BungeeCord API (PROVIDED - roda no Proxy) -->
         <dependency>
             <groupId>net.md-5</groupId>
@@ -92,13 +77,6 @@
             <version>${sqlite.jdbc.version}</version>
         </dependency>
 
-        <!-- HTTP Client p/ WebIntegrationService (EMBUTIDO) -->
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>${okhttp.version}</version>
-        </dependency>
-
         <!-- HikariCP (corrige: package com.zaxxer.hikari does not exist) -->
         <dependency>
             <groupId>com.zaxxer</groupId>
@@ -111,6 +89,13 @@
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <version>${mysql.driver.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -127,6 +112,12 @@
                 </configuration>
             </plugin>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.2</version>
+            </plugin>
+
             <!-- Shade: gera 1 JAR final com deps EMBUTIDAS -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -138,10 +129,20 @@
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <id>spigot-distribution</id>
                         <configuration>
-                            <shadedArtifactAttached>false</shadedArtifactAttached>
-
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>Spigot</shadedClassifierName>
                             <filters>
+                                <filter>
+                                    <artifact>com.alandeveloper.crz:StarfinBans</artifact>
+                                    <includes>
+                                        <include>com/starfinplugins/bans/**</include>
+                                        <include>plugin.yml</include>
+                                        <include>config.yml</include>
+                                        <include>messages.yml</include>
+                                    </includes>
+                                </filter>
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
@@ -151,14 +152,73 @@
                                     </excludes>
                                 </filter>
                             </filters>
-
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.zaxxer.hikari</pattern>
+                                    <shadedPattern>com.starfinplugins.bans.libs.hikari</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.mysql</pattern>
+                                    <shadedPattern>com.starfinplugins.bans.libs.mysql</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.google.protobuf</pattern>
+                                    <shadedPattern>com.starfinplugins.bans.libs.protobuf</shadedPattern>
+                                </relocation>
+                            </relocations>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
                             </transformers>
-
-                            <!-- Opcional: se quiser evitar conflitos, dá pra relocar libs.
-                                 (Se começar a dar conflito com outros plugins, eu ajusto isso.) -->
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>bungee-distribution</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>Bungee</shadedClassifierName>
+                            <filters>
+                                <filter>
+                                    <artifact>com.alandeveloper.crz:StarfinBans</artifact>
+                                    <includes>
+                                        <include>br/com/starfinplugins/bans/bungee/**</include>
+                                        <include>br/com/starfinplugins/bans/service/**</include>
+                                        <include>bungee.yml</include>
+                                        <include>config.yml</include>
+                                        <include>messages.yml</include>
+                                    </includes>
+                                </filter>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.zaxxer.hikari</pattern>
+                                    <shadedPattern>com.starfinplugins.bans.libs.hikari</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.mysql</pattern>
+                                    <shadedPattern>com.starfinplugins.bans.libs.mysql</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.google.protobuf</pattern>
+                                    <shadedPattern>com.starfinplugins.bans.libs.protobuf</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                            </transformers>
                         </configuration>
                     </execution>
                 </executions>

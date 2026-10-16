@@ -3,12 +3,11 @@ name: StarfinBans
 version: 1.0.0
 main: com.starfinplugins.bans.StarfinBansPlugin
 authors: [StarfinPlugins]
-description: Sistema avançado de punições.
+description: Sistema avancado de punicoes.
 website: https://starfinplugins.com.br
 depend:
   - StarfinCore
 softdepend:
-  - Vault
   - PlaceholderAPI
 commands:
   starfinbans:
@@ -68,15 +67,15 @@ commands:
     usage: /unwarn <player>
     permission: starfinbans.unwarn
   history:
-    description: Ver histórico de punições.
+    description: Ver historico de punicoes.
     usage: /history <player>
     permission: starfinbans.history
   checkban:
-    description: Verificar se um jogador está banido.
+    description: Verificar se um jogador esta banido.
     usage: /checkban <player>
     permission: starfinbans.checkban
   checkmute:
-    description: Verificar se um jogador está mutado.
+    description: Verificar se um jogador esta mutado.
     usage: /checkmute <player>
     permission: starfinbans.checkmute
   dupeip:
@@ -84,17 +83,17 @@ commands:
     usage: /dupeip <player>
     permission: starfinbans.dupeip
   changereason:
-    description: Alterar o motivo de uma punição.
+    description: Alterar o motivo de uma punicao.
     usage: /changereason <id> <new reason>
     permission: starfinbans.changereason
   help:
-    description: Ver lista de comandos de punição.
+    description: Ver lista de comandos de punicao.
     usage: /help
     permission: starfinbans.help
 
 permissions:
   starfinbans.*:
-    description: Permissão total.
+    description: Permissao total.
     children:
       starfinbans.admin: true
       starfinbans.ban: true

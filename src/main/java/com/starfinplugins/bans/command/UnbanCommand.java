@@ -15,7 +15,7 @@ public class UnbanCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (sender instanceof Player && !plugin.getVaultHook().hasPermission((Player)sender, "starfinbans.unban")) { // Permissão atualizada
+        if (!sender.hasPermission("starfinbans.unban")) {
             sender.sendMessage(plugin.getMessageUtil().get("permissions.no-permission-general"));
             return true;
         }

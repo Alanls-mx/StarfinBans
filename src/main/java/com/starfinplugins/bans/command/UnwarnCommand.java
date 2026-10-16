@@ -13,7 +13,7 @@ public class UnwarnCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (sender instanceof Player && !plugin.getVaultHook().hasPermission((Player)sender, "starfinbans.unwarn")) { // Permissão atualizada
+        if (!sender.hasPermission("starfinbans.unwarn")) {
             sender.sendMessage(plugin.getMessageUtil().get("permissions.no-permission-general"));
             return true;
         }
@@ -21,7 +21,7 @@ public class UnwarnCommand implements CommandExecutor {
         // A implementação do Unwarn depende de como o sistema de Warns funciona (por ID ou remove o último)
         // Aqui estou apenas corrigindo o erro de compilação da classe principal e a permissão.
 
-        sender.sendMessage("§cComando ainda não implementado completamente.");
+        sender.sendMessage("§cComando ainda nao implementado completamente.");
         return true;
     }
 }

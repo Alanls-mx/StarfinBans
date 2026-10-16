@@ -31,7 +31,7 @@ public class DupeIpCommand extends AbstractCommand {
 
             // ✅ storage precisa suportar dupe lookup
             if (!(plugin.getStorage() instanceof DupeLookupStorage)) {
-                sender.sendMessage(TextUtil.tc("§c[StarfinBans] Storage atual não suporta /dupeip (DupeLookupStorage)."));
+                sender.sendMessage(TextUtil.tc("§c[StarfinBans] Storage atual nao suporta /dupeip (DupeLookupStorage)."));
                 return;
             }
 

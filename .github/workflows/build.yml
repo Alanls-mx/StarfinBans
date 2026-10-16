@@ -1,15 +1,33 @@
 name: StarfinBans Build
+
 on:
   push:
   pull_request:
+
 jobs:
-  compile:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '8'
           cache: maven
-      - run: mvn --batch-mode clean verify
+      - name: Build and test
+        run: mvn --batch-mode clean verify
+      - name: Verify platform artifacts
+        run: python3 scripts/verify_distributions.py
+      - name: Prepare release-named jars
+        shell: bash
+        run: |
+          version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          mkdir -p dist
+          cp "target/StarfinBans-${version}-Spigot.jar" "dist/StarfinBans-Spigot-${version}.jar"
+          cp "target/StarfinBans-${version}-Bungee.jar" "dist/StarfinBans-Bungee-${version}.jar"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StarfinBans-distributions
+          path: dist/*.jar
+          if-no-files-found: error
+          retention-days: 30

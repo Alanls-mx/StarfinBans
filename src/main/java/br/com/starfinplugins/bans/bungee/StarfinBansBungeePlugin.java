@@ -61,8 +61,12 @@ public class StarfinBansBungeePlugin extends Plugin {
                 storage = new MySqlPunishmentStorageBungee(this, config);
             } else if ("sqlite".equalsIgnoreCase(type)) {
                 storage = new SQLitePunishmentStorageBungee(this);
-            } else {
+            } else if ("memory".equalsIgnoreCase(type)) {
                 storage = new MemoryPunishmentStorageBungee();
+                getLogger().warning("Armazenamento em memória é volátil e destinado somente a testes.");
+            } else {
+                throw new IllegalArgumentException("storage-type inválido: " + type
+                        + ". Valores aceitos: sqlite, mysql ou memory.");
             }
             storage.init();
 
@@ -88,7 +92,9 @@ public class StarfinBansBungeePlugin extends Plugin {
     public void onDisable() {
         try {
             if (storage != null) storage.close();
-        } catch (Exception ignored) {}
+        } catch (Exception error) {
+            getLogger().log(Level.WARNING, "Falha ao encerrar o armazenamento do StarfinBans.", error);
+        }
         getLogger().info("StarfinBans (Bungee) desabilitado.");
     }
 

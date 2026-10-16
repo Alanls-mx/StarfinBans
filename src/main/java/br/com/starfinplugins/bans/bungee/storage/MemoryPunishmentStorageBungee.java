@@ -70,40 +70,53 @@ public class MemoryPunishmentStorageBungee implements PunishmentStorage {
     @Override
     public Punishment getActiveBan(UUID target) {
         return punishments.stream()
-                .filter(p -> p.isActive()
+                .filter(p -> p.isActive() && !p.isExpired()
                         && p.getTarget() != null
                         && p.getTarget().equals(target)
-                        && p.getType().name().startsWith("BAN"))
+                        && (p.getType() == PunishmentType.BAN_PERMANENT
+                        || p.getType() == PunishmentType.BAN_TEMPORARY))
                 .findFirst().orElse(null);
     }
 
     @Override
     public Punishment getActiveMute(UUID target) {
         return punishments.stream()
-                .filter(p -> p.isActive()
+                .filter(p -> p.isActive() && !p.isExpired()
                         && p.getTarget() != null
                         && p.getTarget().equals(target)
-                        && p.getType().name().startsWith("MUTE"))
+                        && (p.getType() == PunishmentType.MUTE_PERMANENT
+                        || p.getType() == PunishmentType.MUTE_TEMPORARY))
+                .findFirst().orElse(null);
+    }
+
+    @Override
+    public Punishment getActiveIpMute(String ip) {
+        return punishments.stream()
+                .filter(p -> p.isActive() && !p.isExpired() && ip != null && ip.equals(p.getIp()))
+                .filter(p -> p.getType() == PunishmentType.MUTE_IP_PERMANENT
+                        || p.getType() == PunishmentType.MUTE_IP_TEMPORARY)
                 .findFirst().orElse(null);
     }
 
     @Override
     public Punishment getActiveBanByName(String targetName) {
         return punishments.stream()
-                .filter(p -> p.isActive()
+                .filter(p -> p.isActive() && !p.isExpired()
                         && p.getPlayerName() != null
                         && p.getPlayerName().equalsIgnoreCase(targetName)
-                        && p.getType().name().startsWith("BAN"))
+                        && (p.getType() == PunishmentType.BAN_PERMANENT
+                        || p.getType() == PunishmentType.BAN_TEMPORARY))
                 .findFirst().orElse(null);
     }
 
     @Override
     public Punishment getActiveMuteByName(String targetName) {
         return punishments.stream()
-                .filter(p -> p.isActive()
+                .filter(p -> p.isActive() && !p.isExpired()
                         && p.getPlayerName() != null
                         && p.getPlayerName().equalsIgnoreCase(targetName)
-                        && p.getType().name().startsWith("MUTE"))
+                        && (p.getType() == PunishmentType.MUTE_PERMANENT
+                        || p.getType() == PunishmentType.MUTE_TEMPORARY))
                 .findFirst().orElse(null);
     }
 

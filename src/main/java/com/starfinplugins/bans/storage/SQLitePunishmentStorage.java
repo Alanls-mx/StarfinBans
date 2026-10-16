@@ -9,6 +9,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
 
 public class SQLitePunishmentStorage implements PunishmentStorage {
 
@@ -20,7 +21,7 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
     }
 
     @Override
-    public void init() {
+    public synchronized void init() {
         try {
             File file = new File(plugin.getDataFolder(), "database.db");
             if (!file.exists()) {
@@ -31,8 +32,15 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
             connection = DriverManager.getConnection("jdbc:sqlite:" + file.getAbsolutePath());
             createTables();
         } catch (Exception e) {
-            e.printStackTrace();
-            plugin.getLogger().severe("Falha ao iniciar SQLite Storage!");
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException closeError) {
+                    e.addSuppressed(closeError);
+                }
+                connection = null;
+            }
+            throw storageFailure("inicializar o armazenamento SQLite", e);
         }
     }
 
@@ -52,21 +60,21 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
                     "active BOOLEAN" +
                     ")");
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw storageFailure("criar a tabela de punições SQLite", e);
         }
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
         try {
             if (connection != null && !connection.isClosed()) connection.close();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw storageFailure("fechar o armazenamento SQLite", e);
         }
     }
 
     @Override
-    public void createPunishment(Punishment p) {
+    public synchronized void createPunishment(Punishment p) {
         String sql = "INSERT INTO punishments (id, target, target_name, ip, staff, staff_name, type, reason, created_at, expires, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, p.getId().toString());
@@ -82,69 +90,70 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
             ps.setBoolean(11, p.isActive());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw storageFailure("gravar punição no SQLite", e);
         }
     }
 
     @Override
-    public Punishment getActiveBan(UUID target) {
+    public synchronized Punishment getActiveBan(UUID target) {
         return getActivePunishment(target, "BAN");
     }
 
     @Override
-    public Punishment getActiveMute(UUID target) {
+    public synchronized Punishment getActiveMute(UUID target) {
         return getActivePunishment(target, "MUTE");
     }
 
     private Punishment getActivePunishment(UUID target, String typePrefix) {
-        String sql = "SELECT * FROM punishments WHERE target = ? AND active = 1 AND type LIKE ? ORDER BY created_at DESC LIMIT 1";
+        String sql = "SELECT * FROM punishments WHERE target = ? AND active = 1 AND type IN (?,?) " +
+                "AND (expires < 0 OR expires > ?) ORDER BY created_at DESC LIMIT 1";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, target.toString());
-            ps.setString(2, typePrefix + "%");
+            ps.setString(2, typePrefix.equals("BAN") ? "BAN_PERMANENT" : "MUTE_PERMANENT");
+            ps.setString(3, typePrefix.equals("BAN") ? "BAN_TEMPORARY" : "MUTE_TEMPORARY");
+            ps.setLong(4, System.currentTimeMillis());
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Punishment p = mapPunishment(rs);
-                    // Filtrar IP bans aqui se o SQL pegar (mas typePrefix 'BAN%' pega BAN_IP... então precisamos filtrar no Java ou melhorar SQL)
-                    // O método getActiveBan pede banimento DE JOGADOR.
-                    if (typePrefix.equals("BAN") && p.getType().isIpBan()) return null;
-                    if (typePrefix.equals("MUTE") && p.getType().isIpMute()) return null;
                     return p;
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw storageFailure("consultar punição ativa no SQLite", e);
         }
         return null;
     }
 
     @Override
-    public Punishment getActiveIpBan(String ip) {
+    public synchronized Punishment getActiveIpBan(String ip) {
         return getActiveIpPunishment(ip, "BAN_IP");
     }
 
     @Override
-    public Punishment getActiveIpMute(String ip) {
+    public synchronized Punishment getActiveIpMute(String ip) {
         return getActiveIpPunishment(ip, "MUTE_IP");
     }
 
     private Punishment getActiveIpPunishment(String ip, String typePrefix) {
-        String sql = "SELECT * FROM punishments WHERE ip = ? AND active = 1 AND type LIKE ? ORDER BY created_at DESC LIMIT 1";
+        String sql = "SELECT * FROM punishments WHERE ip = ? AND active = 1 AND type LIKE ? " +
+                "AND (expires < 0 OR expires > ?) ORDER BY created_at DESC LIMIT 1";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, ip);
             ps.setString(2, typePrefix + "%");
+            ps.setLong(3, System.currentTimeMillis());
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return mapPunishment(rs);
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw storageFailure("consultar punição por IP no SQLite", e);
         }
         return null;
     }
 
     @Override
-    public List<Punishment> getHistory(UUID target) {
+    public synchronized List<Punishment> getHistory(UUID target) {
         List<Punishment> list = new ArrayList<>();
         String sql = "SELECT * FROM punishments WHERE target = ? ORDER BY created_at DESC";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -155,13 +164,13 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw storageFailure("consultar histórico no SQLite", e);
         }
         return list;
     }
 
     @Override
-    public void expirePunishment(UUID target, PunishmentType type, UUID staff, String staffName) {
+    public synchronized void expirePunishment(UUID target, PunishmentType type, UUID staff, String staffName) {
         // Desativa punições ativas desse tipo para o alvo
         String sql = "UPDATE punishments SET active = 0 WHERE target = ? AND type = ? AND active = 1";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -169,12 +178,12 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
             ps.setString(2, type.name());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw storageFailure("revogar punição no SQLite", e);
         }
     }
 
     @Override
-    public String getLastIp(UUID target) {
+    public synchronized String getLastIp(UUID target) {
         String sql = "SELECT ip FROM punishments WHERE target = ? ORDER BY created_at DESC LIMIT 1";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, target.toString());
@@ -184,13 +193,13 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw storageFailure("consultar último IP no SQLite", e);
         }
         return null;
     }
 
     @Override
-    public List<String> getAlts(String ip) {
+    public synchronized List<String> getAlts(String ip) {
         List<String> alts = new ArrayList<>();
         String sql = "SELECT DISTINCT target_name FROM punishments WHERE ip = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -201,7 +210,7 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw storageFailure("consultar contas por IP no SQLite", e);
         }
         return alts;
     }
@@ -220,5 +229,11 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
                 rs.getLong("expires"),
                 rs.getBoolean("active")
         );
+    }
+
+    private IllegalStateException storageFailure(String operation, Exception error) {
+        plugin.getLogger().log(Level.SEVERE,
+                "Falha ao " + operation + "; a operação não foi confirmada.", error);
+        return new IllegalStateException("Falha ao " + operation + ".", error);
     }
 }

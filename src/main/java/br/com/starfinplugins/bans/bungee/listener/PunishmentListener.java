@@ -15,6 +15,7 @@ import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 
 import java.util.UUID;
+import java.util.logging.Level;
 
 public class PunishmentListener implements Listener {
 
@@ -30,9 +31,18 @@ public class PunishmentListener implements Listener {
         String ip = event.getConnection().getAddress().getAddress().getHostAddress();
         UUID uuid = event.getConnection().getUniqueId();
 
-        Punishment ban = uuid != null ? plugin.getStorage().getActiveBan(uuid) : null;
-        if (ban == null) ban = plugin.getStorage().getActiveBanByName(name);
-        if (ban == null) ban = plugin.getStorage().getActiveIpBan(ip);
+        Punishment ban;
+        try {
+            ban = uuid != null ? plugin.getStorage().getActiveBan(uuid) : null;
+            if (ban == null) ban = plugin.getStorage().getActiveBanByName(name);
+            if (ban == null) ban = plugin.getStorage().getActiveIpBan(ip);
+        } catch (RuntimeException error) {
+            plugin.getLogger().log(Level.SEVERE,
+                    "Nao foi possivel verificar os banimentos no armazenamento; conexao recusada por seguranca.", error);
+            event.setCancelled(true);
+            event.setCancelReason("Nao foi possivel verificar sua punicao no momento. Tente novamente mais tarde.");
+            return;
+        }
 
         if (ban == null || ban.isExpired()) return;
 
@@ -59,7 +69,20 @@ public class PunishmentListener implements Listener {
         ProxiedPlayer p = (ProxiedPlayer) event.getSender();
         UUID uuid = p.getUniqueId();
 
-        Punishment mute = plugin.getStorage().getActiveMute(uuid);
+        Punishment mute;
+        try {
+            mute = plugin.getStorage().getActiveMute(uuid);
+            if (mute == null) {
+                String ip = p.getAddress().getAddress().getHostAddress();
+                mute = plugin.getStorage().getActiveIpMute(ip);
+            }
+        } catch (RuntimeException error) {
+            plugin.getLogger().log(Level.SEVERE,
+                    "Nao foi possivel verificar os mutes no armazenamento; mensagem bloqueada por seguranca.", error);
+            event.setCancelled(true);
+            p.sendMessage(TextUtil.tc("&cNao foi possivel verificar sua punicao no momento. Tente novamente."));
+            return;
+        }
         if (mute == null) return;
         if (mute.isExpired()) return;
 

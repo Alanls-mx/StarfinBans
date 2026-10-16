@@ -41,7 +41,7 @@ public class HistoryCommand extends AbstractCommand {
 
             for (Punishment p : history) {
                 long timeDiff = System.currentTimeMillis() - p.getCreatedAt();
-                String timeAgo = TimeUtil.formatDuration(timeDiff) + " atrás";
+                String timeAgo = TimeUtil.formatDuration(timeDiff) + " atras";
 
                 String status = p.isActive() ? "§a(Ativo)" : "§c(Inativo)";
                 if (p.isExpired()) status = "§e(Expirado)";

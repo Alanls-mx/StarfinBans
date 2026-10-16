@@ -13,6 +13,6 @@ public class ChangeReasonCommand extends AbstractCommand {
     public void execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission(getPermission())) { noPerm(sender); return; }
 
-        msg(sender, "§cFuncionalidade changereason não implementada (precisa de updateReason(UUID punishmentId, String reason) no Storage).");
+        msg(sender, "§cFuncionalidade changereason nao implementada (precisa de updateReason(UUID punishmentId, String reason) no Storage).");
     }
 }

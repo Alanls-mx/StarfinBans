@@ -3,7 +3,6 @@ package com.starfinplugins.bans;
 
 import com.starfinplugins.bans.api.PunishmentAPI;
 import com.starfinplugins.bans.command.*;
-import com.starfinplugins.bans.hook.VaultHook;
 import com.starfinplugins.bans.listener.PunishmentListener;
 import com.starfinplugins.bans.license.CoreAuthorization;
 import com.starfinplugins.bans.placeholder.StarfinBansPlaceholderExpansion;
@@ -42,7 +41,6 @@ public class StarfinBansPlugin extends JavaPlugin {
     private PunishmentStorage storage;
     private PunishmentManager punishmentManager;
     private MessageUtil messageUtil;
-    private VaultHook vaultHook;
 
     private boolean lockdown = false;
     private volatile boolean licensed = false;
@@ -96,14 +94,17 @@ public class StarfinBansPlugin extends JavaPlugin {
                 storage = new MySqlPunishmentStorage(this);
             } else if (type.equalsIgnoreCase("sqlite")) {
                 storage = new SQLitePunishmentStorage(this);
-            } else {
+            } else if (type.equalsIgnoreCase("memory")) {
                 storage = new MemoryPunishmentStorage();
+                getLogger().warning("Armazenamento em memória é volátil e destinado somente a testes.");
+            } else {
+                throw new IllegalArgumentException("storage-type inválido: " + type
+                        + ". Valores aceitos: sqlite, mysql ou memory.");
             }
 
             storage.init();
 
             punishmentManager = new PunishmentManager(this, storage);
-            vaultHook = new VaultHook();
             setupHooks();
 
             Bukkit.getPluginManager().registerEvents(new PunishmentListener(this), this);
@@ -124,7 +125,11 @@ public class StarfinBansPlugin extends JavaPlugin {
     public void onDisable() {
         licensed = false;
         initialized = false;
-        if (storage != null) storage.close();
+        try {
+            if (storage != null) storage.close();
+        } catch (RuntimeException error) {
+            getLogger().log(Level.SEVERE, "Falha ao encerrar o armazenamento do StarfinBans.", error);
+        }
         getLogger().info("STARFINPLUGINS | STARFINBANS: desabilitado.");
     }
 
@@ -239,9 +244,6 @@ public class StarfinBansPlugin extends JavaPlugin {
     }
 
     private void setupHooks() {
-        if (Bukkit.getPluginManager().getPlugin("Vault") != null) {
-            if (getConfig().getBoolean("vault.use-permissions")) vaultHook.setupPermissions();
-        }
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new StarfinBansPlaceholderExpansion(this).register();
         }
@@ -251,7 +253,6 @@ public class StarfinBansPlugin extends JavaPlugin {
     public PunishmentAPI getPunishmentAPI() { return punishmentManager; }
     public PunishmentStorage getStorage() { return storage; }
     public MessageUtil getMessageUtil() { return messageUtil; }
-    public VaultHook getVaultHook() { return vaultHook; }
     public boolean isLockdown() { return lockdown; }
     public void setLockdown(boolean lockdown) { this.lockdown = lockdown; }
     public boolean isLicensed() { return initialized && checkLicense(); }

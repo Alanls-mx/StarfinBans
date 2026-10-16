@@ -25,11 +25,11 @@ public class HelpCommand extends AbstractCommand {
         send(sender, "tempipmute <player/ip> <time> <reason>", "Muta um IP temporariamente.");
         send(sender, "kick <player> <reason>", "Expulsa um jogador.");
         send(sender, "warn <player> <reason>", "Alerta um jogador.");
-        send(sender, "unban/unmute <player>", "Remove punições.");
-        send(sender, "checkban/checkmute <player>", "Verifica punições ativas.");
-        send(sender, "history <player>", "Vê o histórico por nome.");
-        send(sender, "dupeip <player/ip>", "Vê contas no mesmo IP.");
-        send(sender, "starfinbans <reload|lockdown|broadcast|info>", "Administração.");
+        send(sender, "unban/unmute <player>", "Remove punicoes.");
+        send(sender, "checkban/checkmute <player>", "Verifica punicoes ativas.");
+        send(sender, "history <player>", "Ve o historico por nome.");
+        send(sender, "dupeip <player/ip>", "Ve contas no mesmo IP.");
+        send(sender, "starfinbans <reload|lockdown|broadcast|info>", "Administracao.");
     }
 
     private void send(CommandSender sender, String cmd, String desc) {

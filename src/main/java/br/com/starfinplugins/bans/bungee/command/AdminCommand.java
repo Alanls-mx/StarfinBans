@@ -39,7 +39,7 @@ public class AdminCommand extends AbstractCommand {
             }
             case "broadcast": {
                 if (args.length < 2) {
-                    msg(sender, "§cUse: /starfinbans broadcast <mensagem>");
+                    msg(sender, "§cUse: /starfinbans broadcast <message>");
                     return;
                 }
                 String bc = String.join(" ", Arrays.copyOfRange(args, 1, args.length));

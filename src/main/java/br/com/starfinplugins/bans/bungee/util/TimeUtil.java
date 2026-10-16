@@ -15,19 +15,27 @@ public final class TimeUtil {
         long result = 0;
         Pattern pattern = Pattern.compile("(\\d+)([wdhms])");
         Matcher matcher = pattern.matcher(input);
-
-        while (matcher.find()) {
-            long value = Long.parseLong(matcher.group(1));
-            String unit = matcher.group(2);
-            switch (unit) {
-                case "w": result += TimeUnit.DAYS.toMillis(value * 7); break;
-                case "d": result += TimeUnit.DAYS.toMillis(value); break;
-                case "h": result += TimeUnit.HOURS.toMillis(value); break;
-                case "m": result += TimeUnit.MINUTES.toMillis(value); break;
-                case "s": result += TimeUnit.SECONDS.toMillis(value); break;
+        int parsedUntil = 0;
+        try {
+            while (matcher.find()) {
+                if (matcher.start() != parsedUntil) return -1;
+                long value = Long.parseLong(matcher.group(1));
+                long unitMillis;
+                switch (matcher.group(2)) {
+                    case "w": unitMillis = TimeUnit.DAYS.toMillis(7); break;
+                    case "d": unitMillis = TimeUnit.DAYS.toMillis(1); break;
+                    case "h": unitMillis = TimeUnit.HOURS.toMillis(1); break;
+                    case "m": unitMillis = TimeUnit.MINUTES.toMillis(1); break;
+                    case "s": unitMillis = TimeUnit.SECONDS.toMillis(1); break;
+                    default: return -1;
+                }
+                result = Math.addExact(result, Math.multiplyExact(value, unitMillis));
+                parsedUntil = matcher.end();
             }
+        } catch (NumberFormatException | ArithmeticException invalidDuration) {
+            return -1;
         }
-        return result;
+        return parsedUntil == input.length() && parsedUntil > 0 ? result : -1;
     }
 
     public static String formatDuration(long millis) {

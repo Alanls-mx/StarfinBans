@@ -28,10 +28,10 @@ public class HelpCommand implements CommandExecutor {
         sendHelp(sender, "tempipmute <player/ip> <time> <reason>", "Muta um IP temporariamente.");
         sendHelp(sender, "kick <player> <reason>", "Expulsa um jogador.");
         sendHelp(sender, "warn <player> <reason>", "Alerta um jogador.");
-        sendHelp(sender, "unban/unmute <player>", "Remove punições.");
-        sendHelp(sender, "check <ban/mute> <player>", "Verifica punições ativas.");
-        sendHelp(sender, "history <player>", "Vê o histórico de punições.");
-        sendHelp(sender, "changereason <id> <reason>", "Altera o motivo de uma punição.");
+        sendHelp(sender, "unban/unmute <player>", "Remove punicoes.");
+        sendHelp(sender, "check <ban/mute> <player>", "Verifica punicoes ativas.");
+        sendHelp(sender, "history <player>", "Ve o historico de punicoes.");
+        sendHelp(sender, "changereason <id> <reason>", "Altera o motivo de uma punicao.");
 
         return true;
     }

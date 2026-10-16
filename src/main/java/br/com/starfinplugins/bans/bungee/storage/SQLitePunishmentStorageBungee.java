@@ -8,6 +8,7 @@ import br.com.starfinplugins.bans.bungee.storage.PunishmentStorage;
 import java.io.File;
 import java.sql.*;
 import java.util.*;
+import java.util.logging.Level;
 
 public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLookupStorage {
 
@@ -19,7 +20,7 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
     }
 
     @Override
-    public void init() {
+    public synchronized void init() {
         try {
             File file = new File(plugin.getDataFolder(), "database.db");
             if (!file.exists()) {
@@ -32,7 +33,15 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
             createTables();
 
         } catch (Exception e) {
-            plugin.getLogger().severe("Falha ao iniciar SQLite: " + e.getMessage());
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException closeError) {
+                    e.addSuppressed(closeError);
+                }
+                connection = null;
+            }
+            throw storageFailure("inicializar o armazenamento SQLite", e);
         }
     }
 
@@ -55,14 +64,16 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
         try {
             if (connection != null && !connection.isClosed()) connection.close();
-        } catch (Exception ignored) {}
+        } catch (Exception error) {
+            throw storageFailure("fechar o armazenamento SQLite", error);
+        }
     }
 
     @Override
-    public void createPunishment(Punishment p) {
+    public synchronized void createPunishment(Punishment p) {
         String sql = "INSERT INTO punishments " +
                 "(id,target,target_name,ip,staff,staff_name,type,reason,created_at,expires,active) " +
                 "VALUES (?,?,?,?,?,?,?,?,?,?,?)";
@@ -81,20 +92,22 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
             ps.setBoolean(11, p.isActive());
             ps.executeUpdate();
         } catch (SQLException e) {
-            plugin.getLogger().warning("SQLite createPunishment: " + e.getMessage());
+            throw storageFailure("gravar punição no SQLite", e);
         }
     }
 
     // ---------------- ACTIVE (UUID) ----------------
 
     @Override
-    public Punishment getActiveIpBan(String ip) {
+    public synchronized Punishment getActiveIpBan(String ip) {
         if (ip == null || ip.isEmpty()) return null;
         String sql = "SELECT * FROM punishments WHERE ip = ? AND active = 1 " +
+                "AND (expires < 0 OR expires > ?) " +
                 "AND type IN ('BAN_IP_PERMANENT', 'BAN_IP_TEMPORARY') " +
                 "ORDER BY created_at DESC LIMIT 1";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, ip);
+            statement.setLong(2, System.currentTimeMillis());
             try (ResultSet rows = statement.executeQuery()) {
                 if (rows.next()) {
                     Punishment punishment = map(rows);
@@ -102,18 +115,40 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
                 }
             }
         } catch (SQLException error) {
-            plugin.getLogger().warning("SQLite getActiveIpBan: " + error.getMessage());
+            throw storageFailure("consultar banimento por IP no SQLite", error);
         }
         return null;
     }
 
     @Override
-    public Punishment getActiveBan(UUID target) {
+    public synchronized Punishment getActiveIpMute(String ip) {
+        if (ip == null || ip.isEmpty()) return null;
+        String sql = "SELECT * FROM punishments WHERE ip = ? AND active = 1 " +
+                "AND (expires < 0 OR expires > ?) " +
+                "AND type IN ('MUTE_IP_PERMANENT', 'MUTE_IP_TEMPORARY') " +
+                "ORDER BY created_at DESC LIMIT 1";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, ip);
+            statement.setLong(2, System.currentTimeMillis());
+            try (ResultSet rows = statement.executeQuery()) {
+                if (rows.next()) {
+                    Punishment punishment = map(rows);
+                    return punishment.isExpired() ? null : punishment;
+                }
+            }
+        } catch (SQLException error) {
+            throw storageFailure("consultar mute por IP no SQLite", error);
+        }
+        return null;
+    }
+
+    @Override
+    public synchronized Punishment getActiveBan(UUID target) {
         return getActivePunishmentByTarget(target, "BAN");
     }
 
     @Override
-    public Punishment getActiveMute(UUID target) {
+    public synchronized Punishment getActiveMute(UUID target) {
         return getActivePunishmentByTarget(target, "MUTE");
     }
 
@@ -121,25 +156,25 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
         if (target == null) return null;
 
         String sql = "SELECT * FROM punishments " +
-                "WHERE target = ? AND active = 1 AND type LIKE ? " +
+                "WHERE target = ? AND active = 1 AND type IN (?,?) " +
+                "AND (expires < 0 OR expires > ?) " +
                 "ORDER BY created_at DESC LIMIT 1";
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, target.toString());
-            ps.setString(2, prefix + "%");
+            ps.setString(2, "BAN".equals(prefix) ? "BAN_PERMANENT" : "MUTE_PERMANENT");
+            ps.setString(3, "BAN".equals(prefix) ? "BAN_TEMPORARY" : "MUTE_TEMPORARY");
+            ps.setLong(4, System.currentTimeMillis());
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Punishment p = map(rs);
 
-                    if ("BAN".equals(prefix) && isIpBan(p.getType())) return null;
-                    if ("MUTE".equals(prefix) && isIpMute(p.getType())) return null;
-
                     return p;
                 }
             }
         } catch (SQLException e) {
-            plugin.getLogger().warning("SQLite getActivePunishmentByTarget: " + e.getMessage());
+            throw storageFailure("consultar punição ativa no SQLite", e);
         }
 
         return null;
@@ -148,12 +183,12 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
     // ---------------- ACTIVE (NAME) ----------------
 
     @Override
-    public Punishment getActiveBanByName(String targetName) {
+    public synchronized Punishment getActiveBanByName(String targetName) {
         return getActivePunishmentByName(targetName, "BAN");
     }
 
     @Override
-    public Punishment getActiveMuteByName(String targetName) {
+    public synchronized Punishment getActiveMuteByName(String targetName) {
         return getActivePunishmentByName(targetName, "MUTE");
     }
 
@@ -161,25 +196,25 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
         if (targetName == null || targetName.isEmpty()) return null;
 
         String sql = "SELECT * FROM punishments " +
-                "WHERE lower(target_name) = lower(?) AND active = 1 AND type LIKE ? " +
+                "WHERE lower(target_name) = lower(?) AND active = 1 AND type IN (?,?) " +
+                "AND (expires < 0 OR expires > ?) " +
                 "ORDER BY created_at DESC LIMIT 1";
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, targetName);
-            ps.setString(2, prefix + "%");
+            ps.setString(2, "BAN".equals(prefix) ? "BAN_PERMANENT" : "MUTE_PERMANENT");
+            ps.setString(3, "BAN".equals(prefix) ? "BAN_TEMPORARY" : "MUTE_TEMPORARY");
+            ps.setLong(4, System.currentTimeMillis());
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Punishment p = map(rs);
 
-                    if ("BAN".equals(prefix) && isIpBan(p.getType())) return null;
-                    if ("MUTE".equals(prefix) && isIpMute(p.getType())) return null;
-
                     return p;
                 }
             }
         } catch (SQLException e) {
-            plugin.getLogger().warning("SQLite getActivePunishmentByName: " + e.getMessage());
+            throw storageFailure("consultar punição por nome no SQLite", e);
         }
 
         return null;
@@ -188,7 +223,7 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
     // ---------------- HISTORY ----------------
 
     @Override
-    public List<Punishment> getHistory(UUID target) {
+    public synchronized List<Punishment> getHistory(UUID target) {
         if (target == null) return Collections.emptyList();
 
         List<Punishment> list = new ArrayList<>();
@@ -201,14 +236,14 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
                 while (rs.next()) list.add(map(rs));
             }
         } catch (SQLException e) {
-            plugin.getLogger().warning("SQLite getHistory: " + e.getMessage());
+            throw storageFailure("consultar histórico no SQLite", e);
         }
 
         return list;
     }
 
     @Override
-    public List<Punishment> getHistoryByName(String targetName) {
+    public synchronized List<Punishment> getHistoryByName(String targetName) {
         if (targetName == null || targetName.isEmpty()) return Collections.emptyList();
 
         List<Punishment> list = new ArrayList<>();
@@ -221,7 +256,7 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
                 while (rs.next()) list.add(map(rs));
             }
         } catch (SQLException e) {
-            plugin.getLogger().warning("SQLite getHistoryByName: " + e.getMessage());
+            throw storageFailure("consultar histórico por nome no SQLite", e);
         }
 
         return list;
@@ -230,7 +265,7 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
     // ---------------- EXPIRE ----------------
 
     @Override
-    public void expirePunishment(UUID target, PunishmentType type, UUID staff, String staffName) {
+    public synchronized void expirePunishment(UUID target, PunishmentType type, UUID staff, String staffName) {
         if (target == null || type == null) return;
 
         String sql = "UPDATE punishments SET active = 0 WHERE target = ? AND type = ? AND active = 1";
@@ -240,12 +275,12 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
             ps.setString(2, type.name());
             ps.executeUpdate();
         } catch (SQLException e) {
-            plugin.getLogger().warning("SQLite expirePunishment: " + e.getMessage());
+            throw storageFailure("revogar punição no SQLite", e);
         }
     }
 
     @Override
-    public void expirePunishmentByName(String targetName, PunishmentType type, UUID staff, String staffName) {
+    public synchronized void expirePunishmentByName(String targetName, PunishmentType type, UUID staff, String staffName) {
         if (targetName == null || targetName.isEmpty() || type == null) return;
 
         String sql = "UPDATE punishments SET active = 0 " +
@@ -256,12 +291,12 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
             ps.setString(2, type.name());
             ps.executeUpdate();
         } catch (SQLException e) {
-            plugin.getLogger().warning("SQLite expirePunishmentByName: " + e.getMessage());
+            throw storageFailure("revogar punição por nome no SQLite", e);
         }
     }
 
     @Override
-    public void expireAllPunishmentsByName(String targetName, UUID staff, String staffName) {
+    public synchronized void expireAllPunishmentsByName(String targetName, UUID staff, String staffName) {
         if (targetName == null || targetName.isEmpty()) return;
 
         String sql = "UPDATE punishments SET active = 0 WHERE lower(target_name) = lower(?) AND active = 1";
@@ -270,14 +305,14 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
             ps.setString(1, targetName);
             ps.executeUpdate();
         } catch (SQLException e) {
-            plugin.getLogger().warning("SQLite expireAllPunishmentsByName: " + e.getMessage());
+            throw storageFailure("revogar punições por nome no SQLite", e);
         }
     }
 
     // ---------------- DUPE LOOKUP (extra, sem quebrar interface) ----------------
 
     @Override
-    public String getLastIpByName(String targetName) {
+    public synchronized String getLastIpByName(String targetName) {
         if (targetName == null || targetName.isEmpty()) return null;
 
         String sql = "SELECT ip FROM punishments WHERE lower(target_name) = lower(?) " +
@@ -289,14 +324,14 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
                 if (rs.next()) return rs.getString("ip");
             }
         } catch (SQLException e) {
-            plugin.getLogger().warning("SQLite getLastIpByName: " + e.getMessage());
+            throw storageFailure("consultar último IP no SQLite", e);
         }
 
         return null;
     }
 
     @Override
-    public List<String> getAlts(String ip) {
+    public synchronized List<String> getAlts(String ip) {
         if (ip == null || ip.isEmpty()) return Collections.emptyList();
 
         List<String> alts = new ArrayList<>();
@@ -311,7 +346,7 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
                 }
             }
         } catch (SQLException e) {
-            plugin.getLogger().warning("SQLite getAlts: " + e.getMessage());
+            throw storageFailure("consultar contas por IP no SQLite", e);
         }
 
         return alts;
@@ -339,11 +374,9 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
         );
     }
 
-    private boolean isIpBan(PunishmentType t) {
-        return t == PunishmentType.BAN_IP_PERMANENT || t == PunishmentType.BAN_IP_TEMPORARY;
-    }
-
-    private boolean isIpMute(PunishmentType t) {
-        return t == PunishmentType.MUTE_IP_PERMANENT || t == PunishmentType.MUTE_IP_TEMPORARY;
+    private IllegalStateException storageFailure(String operation, Exception error) {
+        plugin.getLogger().log(Level.SEVERE,
+                "Falha ao " + operation + "; a operação não foi confirmada.", error);
+        return new IllegalStateException("Falha ao " + operation + ".", error);
     }
 }

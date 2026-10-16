@@ -10,6 +10,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 
+import java.util.logging.Level;
+
 public class PunishmentListener implements Listener {
 
     private final StarfinBansPlugin plugin;
@@ -21,13 +23,19 @@ public class PunishmentListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onLogin(AsyncPlayerPreLoginEvent event) {
         if (!plugin.isLicensed()) return;
-        // 1. Verifica Ban por UUID (Banimento direto no jogador)
-        Punishment ban = plugin.getStorage().getActiveBan(event.getUniqueId());
-
-        // 2. Se não banido por UUID, verifica por IP (Banimento de IP)
-        if (ban == null) {
-            String ip = event.getAddress().getHostAddress();
-            ban = plugin.getStorage().getActiveIpBan(ip);
+        Punishment ban;
+        try {
+            ban = plugin.getStorage().getActiveBan(event.getUniqueId());
+            if (ban == null) {
+                String ip = event.getAddress().getHostAddress();
+                ban = plugin.getStorage().getActiveIpBan(ip);
+            }
+        } catch (RuntimeException error) {
+            plugin.getLogger().log(Level.SEVERE,
+                    "Nao foi possivel verificar os banimentos no armazenamento; conexao recusada por seguranca.", error);
+            event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
+                    "Nao foi possivel verificar sua punicao no momento. Tente novamente mais tarde.");
+            return;
         }
 
         if (ban != null) {
@@ -54,7 +62,7 @@ public class PunishmentListener implements Listener {
             // Garante que o layout existe, se não usa um fallback genérico
             String layout = plugin.getMessageUtil().getLayout(layoutKey);
             if (layout == null || layout.isEmpty()) {
-                layout = "§cVocê está banido do servidor.\n§7Motivo: " + ban.getReason();
+                layout = "§cVoce esta banido do servidor.\n§7Motivo: " + ban.getReason();
             } else {
                 layout = layout
                         .replace("%reason%", ban.getReason())
@@ -70,13 +78,19 @@ public class PunishmentListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onChat(AsyncPlayerChatEvent event) {
         if (!plugin.isLicensed()) return;
-        // 1. Verifica Mute por UUID
-        Punishment mute = plugin.getStorage().getActiveMute(event.getPlayer().getUniqueId());
-
-        // 2. Se não mutado por UUID, verifica por IP
-        if (mute == null) {
-            String ip = event.getPlayer().getAddress().getAddress().getHostAddress();
-            mute = plugin.getStorage().getActiveIpMute(ip);
+        Punishment mute;
+        try {
+            mute = plugin.getStorage().getActiveMute(event.getPlayer().getUniqueId());
+            if (mute == null) {
+                String ip = event.getPlayer().getAddress().getAddress().getHostAddress();
+                mute = plugin.getStorage().getActiveIpMute(ip);
+            }
+        } catch (RuntimeException error) {
+            plugin.getLogger().log(Level.SEVERE,
+                    "Nao foi possivel verificar os mutes no armazenamento; mensagem bloqueada por seguranca.", error);
+            event.setCancelled(true);
+            event.getPlayer().sendMessage("§cNao foi possivel verificar sua punicao no momento. Tente novamente.");
+            return;
         }
 
         if (mute != null) {

@@ -18,7 +18,7 @@ public class TempBanCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (sender instanceof Player && !plugin.getVaultHook().hasPermission((Player)sender, "starfinbans.tempban")) {
+        if (!sender.hasPermission("starfinbans.tempban")) {
             sender.sendMessage(plugin.getMessageUtil().get("permissions.no-permission-general"));
             return true;
         }
