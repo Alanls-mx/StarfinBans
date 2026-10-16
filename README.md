@@ -64,7 +64,13 @@ Both adapters use the same `punishments` table layout for the existing fields
 (UUIDs, player/IP, type, reason, timestamps and active state). Initialization
 creates missing tables and indexes and records schema version 1 without
 dropping existing punishment rows. Take a database backup before upgrades.
-There is not yet an administrator-triggered SQLite-to-MySQL migration command.
+For an existing SQLite installation, use `scripts/migrate_sqlite_to_mysql.py`
+after installing `scripts/requirements-migration.txt`. It reads the plugin's
+MySQL settings from `config.yml`, runs a dry-run by default, and requires
+`--apply --backup-dir <new directory>` to copy missing punishment IDs. The tool
+backs up the SQLite database and MySQL table before writing, preserves history,
+and stops on an ID conflict. Run it against the relevant platform's old
+`database.db` before removing that file. It never deletes source records.
 
 The current schema does not implement network/server scope or a persistent
 cross-instance event queue. Shared MySQL makes reads and writes common, but
