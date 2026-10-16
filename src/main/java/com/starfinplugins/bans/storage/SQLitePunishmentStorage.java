@@ -10,20 +10,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class SQLitePunishmentStorage implements PunishmentStorage {
 
-    private final StarfinBansPlugin plugin;
+    private final File databaseFile;
+    private final Logger logger;
     private Connection connection;
 
     public SQLitePunishmentStorage(StarfinBansPlugin plugin) {
-        this.plugin = plugin;
+        this(new File(plugin.getDataFolder(), "database.db"), plugin.getLogger());
+    }
+
+    public SQLitePunishmentStorage(File databaseFile, Logger logger) {
+        this.databaseFile = databaseFile;
+        this.logger = logger;
     }
 
     @Override
     public synchronized void init() {
         try {
-            File file = new File(plugin.getDataFolder(), "database.db");
+            File file = databaseFile;
             if (!file.exists()) {
                 file.getParentFile().mkdirs();
                 file.createNewFile();
@@ -282,7 +289,7 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
     }
 
     private IllegalStateException storageFailure(String operation, Exception error) {
-        plugin.getLogger().log(Level.SEVERE,
+        logger.log(Level.SEVERE,
                 "Falha ao " + operation + "; a operação não foi confirmada.", error);
         return new IllegalStateException("Falha ao " + operation + ".", error);
     }

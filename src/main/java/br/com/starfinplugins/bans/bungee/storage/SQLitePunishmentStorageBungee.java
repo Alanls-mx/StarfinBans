@@ -9,20 +9,27 @@ import java.io.File;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLookupStorage {
 
-    private final StarfinBansBungeePlugin plugin;
+    private final File databaseFile;
+    private final Logger logger;
     private Connection connection;
 
     public SQLitePunishmentStorageBungee(StarfinBansBungeePlugin plugin) {
-        this.plugin = plugin;
+        this(new File(plugin.getDataFolder(), "database.db"), plugin.getLogger());
+    }
+
+    public SQLitePunishmentStorageBungee(File databaseFile, Logger logger) {
+        this.databaseFile = databaseFile;
+        this.logger = logger;
     }
 
     @Override
     public synchronized void init() {
         try {
-            File file = new File(plugin.getDataFolder(), "database.db");
+            File file = databaseFile;
             if (!file.exists()) {
                 file.getParentFile().mkdirs();
                 file.createNewFile();
@@ -396,7 +403,7 @@ public class SQLitePunishmentStorageBungee implements PunishmentStorage, DupeLoo
     }
 
     private IllegalStateException storageFailure(String operation, Exception error) {
-        plugin.getLogger().log(Level.SEVERE,
+        logger.log(Level.SEVERE,
                 "Falha ao " + operation + "; a operação não foi confirmada.", error);
         return new IllegalStateException("Falha ao " + operation + ".", error);
     }

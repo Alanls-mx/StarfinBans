@@ -8,6 +8,8 @@ import br.com.starfinplugins.bans.bungee.model.PunishmentType;
 import br.com.starfinplugins.bans.bungee.storage.PunishmentStorage;
 
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.chat.TextComponent;
 
 import java.util.List;
 import java.util.UUID;
@@ -49,8 +51,7 @@ public class PunishmentManager implements PunishmentAPI {
                 true
         );
 
-        ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            if (!plugin.isLicensed()) return;
+        runAuthorized(staffName, "aplicar punicao", () -> {
             storage.createPunishment(p);
             web.sendCreate(p);
         });
@@ -58,8 +59,7 @@ public class PunishmentManager implements PunishmentAPI {
 
     @Override
     public void unban(UUID target, UUID staff, String staffName) {
-        ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            if (!plugin.isLicensed()) return;
+        runAuthorized(staffName, "remover banimento", () -> {
             List<Punishment> history = storage.getHistory(target);
             expireByUuid(target, history, true, staff, staffName);
         });
@@ -67,14 +67,12 @@ public class PunishmentManager implements PunishmentAPI {
 
     @Override
     public void unbanByName(String targetName, UUID staff, String staffName) {
-        ProxyServer.getInstance().getScheduler().runAsync(plugin,
-                () -> { if (plugin.isLicensed()) expireByName(targetName, true, staff, staffName); });
+        runAuthorized(staffName, "remover banimento", () -> expireByName(targetName, true, staff, staffName));
     }
 
     @Override
     public void unmute(UUID target, UUID staff, String staffName) {
-        ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
-            if (!plugin.isLicensed()) return;
+        runAuthorized(staffName, "remover mute", () -> {
             List<Punishment> history = storage.getHistory(target);
             expireByUuid(target, history, false, staff, staffName);
         });
@@ -82,8 +80,27 @@ public class PunishmentManager implements PunishmentAPI {
 
     @Override
     public void unmuteByName(String targetName, UUID staff, String staffName) {
-        ProxyServer.getInstance().getScheduler().runAsync(plugin,
-                () -> { if (plugin.isLicensed()) expireByName(targetName, false, staff, staffName); });
+        runAuthorized(staffName, "remover mute", () -> expireByName(targetName, false, staff, staffName));
+    }
+
+    private void runAuthorized(String staffName, String operation, Runnable work) {
+        ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
+            if (!plugin.isLicensed()) {
+                reportFailure(staffName, operation, "StarfinCore revogou a autorizacao antes da gravacao.");
+                return;
+            }
+            try { work.run(); }
+            catch (RuntimeException error) {
+                reportFailure(staffName, operation, "Banco de dados: " + error.getMessage());
+            }
+        });
+    }
+
+    private void reportFailure(String staffName, String operation, String detail) {
+        String message = "Falha ao " + operation + ": " + detail;
+        plugin.getLogger().severe(message);
+        ProxiedPlayer staff = staffName == null ? null : ProxyServer.getInstance().getPlayer(staffName);
+        if (staff != null) staff.sendMessage(new TextComponent("§c[StarfinBans] " + message));
     }
 
     private void expireByName(String targetName, boolean ban, UUID staff, String staffName) {

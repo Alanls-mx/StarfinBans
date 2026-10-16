@@ -26,9 +26,10 @@ mvn clean verify
 python scripts/verify_distributions.py
 ```
 
-The tests cover duration parsing for both platform adapters. The distribution
-check inspects the generated JAR contents and Java class-file versions. These
-checks do not replace testing against real Spigot, BungeeCord or MySQL servers.
+The tests cover duration parsing, warning removal, reason updates and a shared
+temporary SQLite database read by both adapters. The distribution check
+inspects the generated JAR contents and Java class-file versions. These checks
+do not replace testing against real Spigot, BungeeCord or MySQL servers.
 
 ## Installation and authorization
 
