@@ -10,17 +10,16 @@ porta e validade. `canStart` sozinho não autoriza o Bans.
 
 ## BungeeCord
 
-Instale somente o JAR `StarfinBans-Bungee`. O proxy gera um ID e uma credencial
-próprios no primeiro início, salva-os em `plugins/StarfinBans/config.yml` e
-imprime um código temporário no console. Vincule esse código a uma instalação
-no painel da StarfinWeb e atribua o produto. A validação usa a mesma API e a
-mesma chave pública do Spigot, sem depender de `StarfinLicense` ou Bukkit.
+Instale os JARs `StarfinCore-Bungee` e `StarfinBans-Bungee` no proxy. O Core
+mantém a identidade da instalação e consulta a StarfinWeb. Use
+`/starfincore ativar` para obter um código de vínculo quando necessário e
+atribua `StarfinBans` no painel. O Bans depende do Core e valida localmente o
+grant assinado para `starfin_bans` antes de habilitar comandos e punições.
 
 A porta vinculada é a primeira porta de escuta do proxy. Configure-a no painel
-para corresponder à instalação. O proxy consulta o site a cada minuto.
-Enquanto a autorização estiver pendente ou indisponível, novas entradas e o
-chat são bloqueados. A cópia de `config.yml` expõe a credencial da instalação;
-trate o arquivo como segredo e revogue o vínculo no painel após comprometimento.
+para corresponder à instalação. O Core consulta o site a cada minuto. Quando
+a autorização estiver pendente ou indisponível, o Bans permanece inativo.
+Proteja `plugins/StarfinCore/internal/`, que contém a credencial da instalação.
 
 ## Chaves e compatibilidade
 

@@ -14,6 +14,16 @@ public abstract class AbstractCommand extends Command {
         this.plugin = plugin;
     }
 
+    @Override public final void execute(CommandSender sender, String[] args) {
+        if (!plugin.isLicensed()) {
+            msg(sender, "§cStarfinCore nao autorizou StarfinBans neste proxy.");
+            return;
+        }
+        executeAuthorized(sender, args);
+    }
+
+    protected abstract void executeAuthorized(CommandSender sender, String[] args);
+
     protected void msg(CommandSender sender, String message) {
         sender.sendMessage(TextUtil.tc(message));
     }

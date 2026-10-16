@@ -89,6 +89,7 @@ public class PunishmentListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onChat(ChatEvent event) {
+        if (!plugin.isLicensed()) return;
         if (!(event.getSender() instanceof ProxiedPlayer)) return;
         if (event.isCommand()) return;
 

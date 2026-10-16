@@ -13,7 +13,7 @@ public class UnmuteCommand extends AbstractCommand {
     }
 
     @Override
-    public void execute(CommandSender sender, String[] args) {
+    protected void executeAuthorized(CommandSender sender, String[] args) {
         if (!sender.hasPermission(getPermission())) {
             noPerm(sender);
             return;

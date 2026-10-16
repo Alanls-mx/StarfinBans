@@ -2,3 +2,5 @@ name: StarfinBans
 main: br.com.starfinplugins.bans.bungee.StarfinBansBungeePlugin
 version: 1.0.0
 author: StarfinPlugins
+depends:
+  - StarfinCore

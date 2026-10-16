@@ -2,17 +2,15 @@ package br.com.starfinplugins.bans.bungee;
 
 import br.com.starfinplugins.bans.bungee.command.*;
 import br.com.starfinplugins.bans.bungee.listener.PunishmentListener;
-import br.com.starfinplugins.bans.bungee.listener.LicenseGateListener;
 import br.com.starfinplugins.bans.bungee.storage.MemoryPunishmentStorageBungee;
 import br.com.starfinplugins.bans.bungee.storage.MySqlPunishmentStorageBungee;
 import br.com.starfinplugins.bans.bungee.storage.SQLitePunishmentStorageBungee;
 import br.com.starfinplugins.bans.bungee.util.ConfigUtil;
 import br.com.starfinplugins.bans.bungee.util.MessageUtil;
 import br.com.starfinplugins.bans.bungee.web.WebIntegrationService;
-import br.com.starfinplugins.bans.bungee.license.WebInstallationAuthorization;
+import br.com.starfinplugins.bans.bungee.license.CoreBungeeAuthorization;
 import br.com.starfinplugins.bans.service.PunishmentManager;
 
-// ✅ IMPORT DO CORE (não do bungee)
 import br.com.starfinplugins.bans.bungee.storage.PunishmentStorage;
 
 import net.md_5.bungee.api.ChatColor;
@@ -22,9 +20,6 @@ import net.md_5.bungee.api.plugin.PluginManager;
 import net.md_5.bungee.config.Configuration;
 
 import java.util.concurrent.TimeUnit;
-import java.security.SecureRandom;
-import java.util.Base64;
-import java.util.UUID;
 import java.util.logging.Level;
 
 public class StarfinBansBungeePlugin extends Plugin {
@@ -44,10 +39,6 @@ public class StarfinBansBungeePlugin extends Plugin {
     private volatile boolean licensed = false;
     private volatile boolean initialized = false;
     private volatile boolean listenersRegistered = false;
-    private WebInstallationAuthorization authorization;
-    private long lastChallengeAttempt;
-
-    private static final String STARFIN_PRODUCT_ID = "starfin_bans";
 
     @Override
     public void onEnable() {
@@ -58,8 +49,6 @@ public class StarfinBansBungeePlugin extends Plugin {
             this.config = ConfigUtil.loadConfig(this, "config.yml");
             this.messages = ConfigUtil.loadConfig(this, "messages.yml");
             this.messageUtil = new MessageUtil(messages);
-            ProxyServer.getInstance().getPluginManager().registerListener(this, new LicenseGateListener(this));
-
             startSecuritySystem();
         } catch (Exception e) {
             getLogger().log(Level.SEVERE, "ERRO CRÍTICO: " + e.getMessage(), e);
@@ -104,6 +93,11 @@ public class StarfinBansBungeePlugin extends Plugin {
             getLogger().info(ChatColor.GREEN + "StarfinBans (Bungee) habilitado com sucesso!");
         } catch (Exception e) {
             licensed = false;
+            initialized = false;
+            if (storage != null) {
+                try { storage.close(); } catch (Exception ignored) { /* original error is logged below */ }
+                storage = null;
+            }
             getLogger().log(Level.SEVERE, "ERRO CRÍTICO: " + e.getMessage(), e);
         }
     }
@@ -164,28 +158,15 @@ public class StarfinBansBungeePlugin extends Plugin {
 
     public boolean isLockdown() { return lockdown; }
     public void setLockdown(boolean lockdown) { this.lockdown = lockdown; }
-    public boolean isLicensed() { return licensed && initialized && authorization != null && authorization.current(); }
+    public boolean isLicensed() { return licensed && initialized && CoreBungeeAuthorization.permitted(); }
 
     // ---------------- License System ----------------
 
     private void startSecuritySystem() {
-        String id = config.getString("license.installation-id", "");
-        String credential = config.getString("license.credential", "");
-        if (id.isEmpty() || credential.isEmpty()) {
-            id = UUID.randomUUID().toString();
-            byte[] secret = new byte[32]; new SecureRandom().nextBytes(secret);
-            credential = Base64.getUrlEncoder().withoutPadding().encodeToString(secret);
-            config.set("license.installation-id", id);
-            config.set("license.credential", credential);
-            ConfigUtil.saveConfig(this, "config.yml", config);
-        }
-        int port = ProxyServer.getInstance().getConfig().getListeners().iterator().next().getHost().getPort();
-        authorization = new WebInstallationAuthorization(this, UUID.fromString(id), credential, port,
-            config.getString("license.site-url", "https://starfinplugins.com.br"));
         ProxyServer.getInstance().getScheduler().schedule(this, new Runnable() {
             @Override
             public void run() {
-                boolean allowed = authorization.check();
+                boolean allowed = CoreBungeeAuthorization.permitted();
                 if (allowed) {
                     licensed = true;
                     initializeAuthorized();
@@ -193,13 +174,9 @@ public class StarfinBansBungeePlugin extends Plugin {
                     licensed = false;
                     initialized = false;
                     ProxyServer.getInstance().getPluginManager().unregisterCommands(StarfinBansBungeePlugin.this);
-                    getLogger().warning("Autorizacao StarfinBans revogada ou indisponivel no proxy.");
-                } else if (System.currentTimeMillis() - lastChallengeAttempt > 10 * 60_000L) {
-                    lastChallengeAttempt = System.currentTimeMillis();
-                    try { getLogger().info("Ative a instalacao Bungee no site com o codigo: " + authorization.challenge()); }
-                    catch (Exception ignored) { /* A linked installation has no pending challenge. */ }
+                    getLogger().warning("StarfinCore nao autoriza starfin_bans; comandos e fiscalizacao bloqueados.");
                 }
             }
-        }, 0, 1, TimeUnit.MINUTES);
+        }, 0, 1, TimeUnit.SECONDS);
     }
 }

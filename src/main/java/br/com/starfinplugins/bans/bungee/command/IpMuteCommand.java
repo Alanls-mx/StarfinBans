@@ -20,7 +20,7 @@ public class IpMuteCommand extends AbstractCommand {
     }
 
     @Override
-    public void execute(final CommandSender sender, final String[] args) {
+    protected void executeAuthorized(final CommandSender sender, final String[] args) {
         if (!sender.hasPermission(getPermission())) { noPerm(sender); return; }
 
         if (args.length < 2) {

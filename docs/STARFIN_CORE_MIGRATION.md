@@ -1,9 +1,7 @@
-# StarfinBans — integração controlada com StarfinCore
+# StarfinBans e StarfinCore
 
-O módulo Spigot/Bukkit agora aceita StarfinCore quando disponível e habilitado. A checagem inicial do Core é remota e assíncrona, então o Bans espera até 90s pela autorização antes de carregar suas funções. Enquanto não houver autorização, comandos e listeners de punição não são registrados. Não há bypass nem chave embutida no JAR.
+Em Spigot e BungeeCord, instale as distribuições correspondentes dos dois plugins no mesmo servidor. O Core consulta a StarfinWeb para autorizar `starfin_bans`. O Bans consulta o estado atualizado do Core e valida de forma independente a assinatura do grant, o produto, a instalação, a porta e a validade.
 
-Se StarfinCore não estiver instalado, o Bans conserva a compatibilidade com o StarfinLicense legado (temporária para instalações antigas). Quando o Core está presente, ele tem prioridade e não ocorre fallback para um plugin legado diante de uma negativa do Core. Verificações periódicas continuam fail-closed.
+No BungeeCord, `StarfinCore` é uma dependência obrigatória declarada no `bungee.yml`. Sem o Core ou sem autorização válida, o Bans não registra comandos de punição e não aplica banimentos ou mutes. Cada comando e evento confere novamente a autorização antes de agir. A perda da autorização remove os comandos; o retorno da autorização permite a inicialização novamente.
 
-O identificador de produto é `starfin_bans`. O Bans não se comunica diretamente com a API de licenças. O armazenamento e o histórico de punições não foram alterados.
-
-**BungeeCord:** permanece com StarfinLicense pois o StarfinCore disponível é plugin Bukkit/Spigot, não um plugin Bungee. Não copiar o JAR do Core para proxy; uma implementação compatível será necessária. Além disso, ainda faltam testes em servidores reais, integração Web, casos de revogação e documentação legal/comercial.
+O Core Bungee importa uma identidade antiga do `plugins/StarfinBans/config.yml` no primeiro início para preservar o vínculo existente. Depois dessa migração, a identidade e a credencial ficam em `plugins/StarfinCore/internal/`; a configuração antiga do Bans não deve ser apagada antes de confirmar a importação.

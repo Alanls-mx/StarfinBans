@@ -3,14 +3,7 @@
 # memory: Perde tudo ao reiniciar (Apenas para testes)
 storage-type: "sqlite"
 
-# BungeeCord gera sua identidade de instalacao no primeiro inicio e imprime
-# um codigo de ativacao no console. Vincule-o a um servidor no painel Web.
-# Spigot usa a identidade mantida pelo StarfinCore.
-license:
-  site-url: "https://starfinplugins.com.br"
-  installation-id: ""
-  credential: ""
-
+# As licencas do Spigot e do BungeeCord sao gerenciadas pelo StarfinCore.
 database:
   host: "localhost"
   port: 3306
