@@ -72,12 +72,14 @@ backs up the SQLite database and MySQL table before writing, preserves history,
 and stops on an ID conflict. Run it against the relevant platform's old
 `database.db` before removing that file. It never deletes source records.
 
-The current schema does not implement network/server scope or a persistent
-cross-instance event queue. Shared MySQL makes reads and writes common, but
-does not provide immediate network-wide side effects. Bungee remains the
-recommended enforcement point for proxy-wide bans; avoid configuring duplicate
-punishment enforcement on proxy and every backend until scoped synchronization
-is implemented.
+The Bungee adapter refreshes connected players' ban and mute state from shared
+MySQL every two seconds by default (`enforcement.refresh-seconds`). It removes
+database I/O from the chat event and disconnects players banned on another
+instance after the next successful refresh. A missing or stale mute snapshot
+blocks chat until the database can be checked again. The current schema still
+does not implement network/server scope or a persistent cross-instance event
+queue. Offline instances recover the current ban/mute state from MySQL when
+they restart; an event audit and acknowledgement protocol remains to be built.
 
 The `memory` storage is volatile and is only suitable for local development.
 

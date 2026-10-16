@@ -5,11 +5,13 @@ import br.com.starfinplugins.bans.bungee.model.Punishment;
 import br.com.starfinplugins.bans.bungee.model.PunishmentType;
 import br.com.starfinplugins.bans.bungee.util.TextUtil;
 import br.com.starfinplugins.bans.bungee.util.TimeUtil;
+import br.com.starfinplugins.bans.bungee.service.OnlinePunishmentService;
 
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.ChatEvent;
 import net.md_5.bungee.api.event.LoginEvent;
+import net.md_5.bungee.api.event.PlayerDisconnectEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
@@ -70,7 +72,10 @@ public class PunishmentListener implements Listener {
             return;
         }
 
-        if (ban == null || ban.isExpired()) return;
+        if (ban == null || ban.isExpired()) {
+            plugin.getOnlinePunishments().prime(uuid, name, ip);
+            return;
+        }
 
         String duration = "Permanente";
         if (ban.getExpires() > 0) {
@@ -87,6 +92,13 @@ public class PunishmentListener implements Listener {
         event.setCancelReason(layout);
     }
 
+    @EventHandler
+    public void onDisconnect(PlayerDisconnectEvent event) {
+        if (plugin.getOnlinePunishments() != null) {
+            plugin.getOnlinePunishments().forget(event.getPlayer().getUniqueId());
+        }
+    }
+
     @EventHandler(priority = EventPriority.LOWEST)
     public void onChat(ChatEvent event) {
         if (!plugin.isLicensed()) return;
@@ -96,20 +108,13 @@ public class PunishmentListener implements Listener {
         ProxiedPlayer p = (ProxiedPlayer) event.getSender();
         UUID uuid = p.getUniqueId();
 
-        Punishment mute;
-        try {
-            mute = plugin.getStorage().getActiveMute(uuid);
-            if (mute == null) {
-                String ip = p.getAddress().getAddress().getHostAddress();
-                mute = plugin.getStorage().getActiveIpMute(ip);
-            }
-        } catch (RuntimeException error) {
-            plugin.getLogger().log(Level.SEVERE,
-                    "Nao foi possivel verificar os mutes no armazenamento; mensagem bloqueada por seguranca.", error);
+        OnlinePunishmentService.Snapshot snapshot = plugin.getOnlinePunishments().snapshot(uuid);
+        if (snapshot == null) {
             event.setCancelled(true);
             p.sendMessage(TextUtil.tc("&cNao foi possivel verificar sua punicao no momento. Tente novamente."));
             return;
         }
+        Punishment mute = snapshot.getMute();
         if (mute == null) return;
         if (mute.isExpired()) return;
 

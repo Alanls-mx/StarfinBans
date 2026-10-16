@@ -9,6 +9,7 @@ import br.com.starfinplugins.bans.bungee.util.ConfigUtil;
 import br.com.starfinplugins.bans.bungee.util.MessageUtil;
 import br.com.starfinplugins.bans.bungee.web.WebIntegrationService;
 import br.com.starfinplugins.bans.bungee.license.CoreBungeeAuthorization;
+import br.com.starfinplugins.bans.bungee.service.OnlinePunishmentService;
 import br.com.starfinplugins.bans.service.PunishmentManager;
 
 import br.com.starfinplugins.bans.bungee.storage.PunishmentStorage;
@@ -34,6 +35,7 @@ public class StarfinBansBungeePlugin extends Plugin {
     private MessageUtil messageUtil;
 
     private WebIntegrationService webIntegration;
+    private OnlinePunishmentService onlinePunishments;
 
     private boolean lockdown = false;
     private volatile boolean licensed = false;
@@ -79,6 +81,7 @@ public class StarfinBansBungeePlugin extends Plugin {
 
             // Manager
             punishmentManager = new PunishmentManager(this, storage, webIntegration);
+            onlinePunishments = new OnlinePunishmentService(this, storage);
             }
 
             // Listener
@@ -90,6 +93,7 @@ public class StarfinBansBungeePlugin extends Plugin {
             // Commands
             registerCommands();
             initialized = true;
+            onlinePunishments.start();
             getLogger().info(ChatColor.GREEN + "StarfinBans (Bungee) habilitado com sucesso!");
         } catch (Exception e) {
             licensed = false;
@@ -104,6 +108,7 @@ public class StarfinBansBungeePlugin extends Plugin {
 
     @Override
     public void onDisable() {
+        if (onlinePunishments != null) onlinePunishments.stop();
         try {
             if (storage != null) storage.close();
         } catch (Exception error) {
@@ -156,6 +161,7 @@ public class StarfinBansBungeePlugin extends Plugin {
     public PunishmentStorage getStorage() { return storage; }
     public PunishmentManager getPunishmentManager() { return punishmentManager; }
     public WebIntegrationService getWebIntegration() { return webIntegration; }
+    public OnlinePunishmentService getOnlinePunishments() { return onlinePunishments; }
 
     public boolean isLockdown() { return lockdown; }
     public void setLockdown(boolean lockdown) { this.lockdown = lockdown; }
@@ -174,6 +180,7 @@ public class StarfinBansBungeePlugin extends Plugin {
                 } else if (licensed) {
                     licensed = false;
                     initialized = false;
+                    if (onlinePunishments != null) onlinePunishments.stop();
                     ProxyServer.getInstance().getPluginManager().unregisterCommands(StarfinBansBungeePlugin.this);
                     getLogger().warning("StarfinCore nao autoriza starfin_bans; comandos e fiscalizacao bloqueados.");
                 }

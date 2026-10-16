@@ -23,6 +23,10 @@ web-api:
   send-on-update: true
   send-on-expire: true
 
+enforcement:
+  # Consulta jogadores conectados fora dos eventos de chat e reconhece punicoes de outras instancias.
+  refresh-seconds: 2
+
 options:
   allow-offline-punish: true
   broadcast-bans: true
