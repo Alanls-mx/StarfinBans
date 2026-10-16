@@ -12,8 +12,14 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '8'
+          java-version: '17'
           cache: maven
+      - uses: actions/checkout@v4
+        with:
+          repository: Alanls-mx/StarfinCore
+          path: _dependency/starfincore
+      - name: Install official Core API
+        run: mvn --batch-mode -f _dependency/starfincore/pom.xml install -DskipTests
       - name: Build and test
         run: mvn --batch-mode clean verify
       - name: Verify platform artifacts

@@ -2,12 +2,14 @@ package br.com.starfinplugins.bans.bungee;
 
 import br.com.starfinplugins.bans.bungee.command.*;
 import br.com.starfinplugins.bans.bungee.listener.PunishmentListener;
+import br.com.starfinplugins.bans.bungee.listener.LicenseGateListener;
 import br.com.starfinplugins.bans.bungee.storage.MemoryPunishmentStorageBungee;
 import br.com.starfinplugins.bans.bungee.storage.MySqlPunishmentStorageBungee;
 import br.com.starfinplugins.bans.bungee.storage.SQLitePunishmentStorageBungee;
 import br.com.starfinplugins.bans.bungee.util.ConfigUtil;
 import br.com.starfinplugins.bans.bungee.util.MessageUtil;
 import br.com.starfinplugins.bans.bungee.web.WebIntegrationService;
+import br.com.starfinplugins.bans.bungee.license.WebInstallationAuthorization;
 import br.com.starfinplugins.bans.service.PunishmentManager;
 
 // ✅ IMPORT DO CORE (não do bungee)
@@ -20,6 +22,9 @@ import net.md_5.bungee.api.plugin.PluginManager;
 import net.md_5.bungee.config.Configuration;
 
 import java.util.concurrent.TimeUnit;
+import java.security.SecureRandom;
+import java.util.Base64;
+import java.util.UUID;
 import java.util.logging.Level;
 
 public class StarfinBansBungeePlugin extends Plugin {
@@ -36,7 +41,11 @@ public class StarfinBansBungeePlugin extends Plugin {
     private WebIntegrationService webIntegration;
 
     private boolean lockdown = false;
-    private boolean licensed = false;
+    private volatile boolean licensed = false;
+    private volatile boolean initialized = false;
+    private volatile boolean listenersRegistered = false;
+    private WebInstallationAuthorization authorization;
+    private long lastChallengeAttempt;
 
     private static final String STARFIN_PRODUCT_ID = "starfin_bans";
 
@@ -49,12 +58,18 @@ public class StarfinBansBungeePlugin extends Plugin {
             this.config = ConfigUtil.loadConfig(this, "config.yml");
             this.messages = ConfigUtil.loadConfig(this, "messages.yml");
             this.messageUtil = new MessageUtil(messages);
+            ProxyServer.getInstance().getPluginManager().registerListener(this, new LicenseGateListener(this));
 
-            if (!startSecuritySystem()) {
-                getLogger().severe("Falha na verificação do StarfinLicense. Desabilitando StarfinBans.");
-                return;
-            }
+            startSecuritySystem();
+        } catch (Exception e) {
+            getLogger().log(Level.SEVERE, "ERRO CRÍTICO: " + e.getMessage(), e);
+        }
+    }
 
+    private synchronized void initializeAuthorized() {
+        if (initialized || !licensed) return;
+        try {
+            if (storage == null) {
             // Storage
             String type = config.getString("storage-type", "sqlite");
             if ("mysql".equalsIgnoreCase(type)) {
@@ -75,15 +90,20 @@ public class StarfinBansBungeePlugin extends Plugin {
 
             // Manager
             punishmentManager = new PunishmentManager(this, storage, webIntegration);
+            }
 
             // Listener
-            ProxyServer.getInstance().getPluginManager().registerListener(this, new PunishmentListener(this));
+            if (!listenersRegistered) {
+                ProxyServer.getInstance().getPluginManager().registerListener(this, new PunishmentListener(this));
+                listenersRegistered = true;
+            }
 
             // Commands
             registerCommands();
-
+            initialized = true;
             getLogger().info(ChatColor.GREEN + "StarfinBans (Bungee) habilitado com sucesso!");
         } catch (Exception e) {
+            licensed = false;
             getLogger().log(Level.SEVERE, "ERRO CRÍTICO: " + e.getMessage(), e);
         }
     }
@@ -144,88 +164,42 @@ public class StarfinBansBungeePlugin extends Plugin {
 
     public boolean isLockdown() { return lockdown; }
     public void setLockdown(boolean lockdown) { this.lockdown = lockdown; }
-    public boolean isLicensed() { return licensed; }
+    public boolean isLicensed() { return licensed && authorization != null && authorization.current(); }
 
     // ---------------- License System ----------------
 
-    private boolean startSecuritySystem() {
-        if (!checkLicense()) return false;
-
+    private void startSecuritySystem() {
+        String id = config.getString("license.installation-id", "");
+        String credential = config.getString("license.credential", "");
+        if (id.isEmpty() || credential.isEmpty()) {
+            id = UUID.randomUUID().toString();
+            byte[] secret = new byte[32]; new SecureRandom().nextBytes(secret);
+            credential = Base64.getUrlEncoder().withoutPadding().encodeToString(secret);
+            config.set("license.installation-id", id);
+            config.set("license.credential", credential);
+            ConfigUtil.saveConfig(this, "config.yml", config);
+        }
+        int port = ProxyServer.getInstance().getConfig().getListeners().iterator().next().getHost().getPort();
+        authorization = new WebInstallationAuthorization(this, UUID.fromString(id), credential, port,
+            config.getString("license.site-url", "https://starfinplugins.com.br"));
         ProxyServer.getInstance().getScheduler().schedule(this, new Runnable() {
             @Override
             public void run() {
-                if (!checkLicense()) {
-                    getLogger().severe("[StarfinBans] Violação de segurança detectada (Runtime Check).");
-
+                boolean allowed = authorization.check();
+                if (allowed) {
+                    licensed = true;
+                    initializeAuthorized();
+                } else if (licensed) {
+                    licensed = false;
+                    initialized = false;
                     ProxyServer.getInstance().getPluginManager().unregisterCommands(StarfinBansBungeePlugin.this);
-                    ProxyServer.getInstance().getPluginManager().unregisterListeners(StarfinBansBungeePlugin.this);
-
-                    try { if (storage != null) storage.close(); } catch (Exception ignored) {}
+                    getLogger().warning("Autorizacao StarfinBans revogada ou indisponivel no proxy.");
+                } else if (System.currentTimeMillis() - lastChallengeAttempt > 10 * 60_000L) {
+                    lastChallengeAttempt = System.currentTimeMillis();
+                    try { getLogger().info("Ative a instalacao Bungee no site com o codigo: " + authorization.challenge()); }
+                    catch (Exception ignored) { /* A linked installation has no pending challenge. */ }
                 }
             }
-        }, 5, 5, TimeUnit.MINUTES);
-
-        return true;
-    }
-
-    private boolean checkLicense() {
-        net.md_5.bungee.api.plugin.Plugin licensePlugin =
-                ProxyServer.getInstance().getPluginManager().getPlugin("StarfinLicense");
-        if (licensePlugin == null) {
-            licensed = false;
-            getLogger().severe("[StarfinBans] StarfinLicense não encontrado.");
-            return false;
-        }
-
-        String author = licensePlugin.getDescription().getAuthor();
-        if (author == null || !author.toLowerCase().contains("starfinplugins")) {
-            licensed = false;
-            getLogger().severe("[StarfinBans] StarfinLicense inválido (Author Spoofing). Encontrado: " + author);
-            return false;
-        }
-
-        try {
-            java.lang.reflect.Method[] methods = licensePlugin.getClass().getMethods();
-            java.lang.reflect.Method m2 = null;
-            java.lang.reflect.Method m1 = null;
-
-            // ✅ SEM var (Java 8)
-            for (java.lang.reflect.Method m : methods) {
-                if (!"canStart".equals(m.getName())) continue;
-                if (m.getParameterCount() == 2 && m.getParameterTypes()[1] == String.class) m2 = m;
-                if (m.getParameterCount() == 1) m1 = m;
-            }
-
-            if (m2 != null) {
-                Object res = m2.invoke(licensePlugin, this, STARFIN_PRODUCT_ID);
-                if (!(res instanceof Boolean) || !((Boolean) res)) {
-                    licensed = false;
-                    getLogger().severe("[StarfinBans] StarfinLicense recusou autorização (canStart Plugin,String).");
-                    return false;
-                }
-                licensed = true;
-                return true;
-            }
-
-            if (m1 != null) {
-                Object res = m1.invoke(licensePlugin, this);
-                if (!(res instanceof Boolean) || !((Boolean) res)) {
-                    licensed = false;
-                    getLogger().severe("[StarfinBans] StarfinLicense recusou autorização (canStart Plugin).");
-                    return false;
-                }
-                licensed = true;
-                return true;
-            }
-
-            licensed = false;
-            getLogger().severe("[StarfinBans] StarfinLicense incompatível: método canStart não encontrado.");
-            return false;
-
-        } catch (Exception e) {
-            licensed = false;
-            getLogger().severe("[StarfinBans] Erro ao verificar licença: " + e.getMessage());
-            return false;
-        }
+        }, 0, 5, TimeUnit.MINUTES);
     }
 }
