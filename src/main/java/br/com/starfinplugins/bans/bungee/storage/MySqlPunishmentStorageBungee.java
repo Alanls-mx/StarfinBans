@@ -33,6 +33,7 @@ public final class MySqlPunishmentStorageBungee implements PunishmentStorage, Du
         boolean ssl = config.getBoolean("database.use-ssl", false);
 
         poolConfig = new HikariConfig();
+        poolConfig.setDriverClassName(com.mysql.cj.jdbc.Driver.class.getName());
         poolConfig.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + database
                 + "?useSSL=" + ssl + "&serverTimezone=UTC&characterEncoding=utf8");
         poolConfig.setUsername(config.getString("database.user", "starfinbans"));

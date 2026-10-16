@@ -26,6 +26,7 @@ public class PunishmentListener implements Listener {
         Punishment ban;
         try {
             ban = plugin.getStorage().getActiveBan(event.getUniqueId());
+            if (ban == null) ban = plugin.getStorage().getActiveBanByName(event.getName());
             if (ban == null) {
                 String ip = event.getAddress().getHostAddress();
                 ban = plugin.getStorage().getActiveIpBan(ip);
@@ -81,6 +82,7 @@ public class PunishmentListener implements Listener {
         Punishment mute;
         try {
             mute = plugin.getStorage().getActiveMute(event.getPlayer().getUniqueId());
+            if (mute == null) mute = plugin.getStorage().getActiveMuteByName(event.getPlayer().getName());
             if (mute == null) {
                 String ip = event.getPlayer().getAddress().getAddress().getHostAddress();
                 mute = plugin.getStorage().getActiveIpMute(ip);

@@ -31,6 +31,7 @@ public final class MySqlPunishmentStorage implements PunishmentStorage {
         boolean ssl = plugin.getConfig().getBoolean("database.use-ssl", false);
 
         poolConfig = new HikariConfig();
+        poolConfig.setDriverClassName(com.mysql.cj.jdbc.Driver.class.getName());
         poolConfig.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + database
                 + "?useSSL=" + ssl + "&serverTimezone=UTC&characterEncoding=utf8");
         poolConfig.setUsername(plugin.getConfig().getString("database.user", "starfinbans"));
@@ -141,6 +142,28 @@ public final class MySqlPunishmentStorage implements PunishmentStorage {
     @Override
     public Punishment getActiveMute(UUID target) {
         return findActiveByTarget(target, "MUTE_PERMANENT", "MUTE_TEMPORARY");
+    }
+
+    @Override
+    public Punishment getActiveBanByName(String name) {
+        return findActiveByName(name, "BAN_PERMANENT", "BAN_TEMPORARY");
+    }
+
+    @Override
+    public Punishment getActiveMuteByName(String name) {
+        return findActiveByName(name, "MUTE_PERMANENT", "MUTE_TEMPORARY");
+    }
+
+    private Punishment findActiveByName(String name, String permanent, String temporary) {
+        if (name == null || name.isEmpty()) return null;
+        return findOne("SELECT * FROM " + TABLE
+                        + " WHERE LOWER(target_name) = LOWER(?) AND active = 1 AND type IN (?,?)"
+                        + " ORDER BY created_at DESC LIMIT 1",
+                statement -> {
+                    statement.setString(1, name);
+                    statement.setString(2, permanent);
+                    statement.setString(3, temporary);
+                });
     }
 
     private Punishment findActiveByTarget(UUID target, String permanent, String temporary) {

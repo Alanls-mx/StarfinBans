@@ -39,10 +39,12 @@ public class CheckCommand implements CommandExecutor {
                 active = plugin.getPunishmentAPI().isBanned(target.getUniqueId())
                         ? plugin.getStorage().getActiveBan(target.getUniqueId())
                         : null;
+                if (active == null) active = plugin.getStorage().getActiveBanByName(args[0]);
             } else {
                 active = plugin.getPunishmentAPI().isMuted(target.getUniqueId())
                         ? plugin.getStorage().getActiveMute(target.getUniqueId())
                         : null;
+                if (active == null) active = plugin.getStorage().getActiveMuteByName(args[0]);
             }
 
             if (active == null) {
@@ -53,7 +55,7 @@ public class CheckCommand implements CommandExecutor {
                         ? TimeUtil.formatDuration(active.getExpires() - System.currentTimeMillis())
                         : "Permanente";
 
-                sender.sendMessage(plugin.getMessageUtil().getRaw("check.format")
+                sender.sendMessage(plugin.getMessageUtil().getRaw(type.equals("ban") ? "check.banned" : "check.muted")
                         .replace("%player%", active.getPlayerName())
                         .replace("%reason%", active.getReason())
                         .replace("%staff%", active.getStaffName())

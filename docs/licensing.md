@@ -17,7 +17,7 @@ no painel da StarfinWeb e atribua o produto. A validação usa a mesma API e a
 mesma chave pública do Spigot, sem depender de `StarfinLicense` ou Bukkit.
 
 A porta vinculada é a primeira porta de escuta do proxy. Configure-a no painel
-para corresponder à instalação. O proxy consulta o site a cada cinco minutos.
+para corresponder à instalação. O proxy consulta o site a cada minuto.
 Enquanto a autorização estiver pendente ou indisponível, novas entradas e o
 chat são bloqueados. A cópia de `config.yml` expõe a credencial da instalação;
 trate o arquivo como segredo e revogue o vínculo no painel após comprometimento.

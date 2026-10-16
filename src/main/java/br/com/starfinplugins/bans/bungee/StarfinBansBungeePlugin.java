@@ -164,7 +164,7 @@ public class StarfinBansBungeePlugin extends Plugin {
 
     public boolean isLockdown() { return lockdown; }
     public void setLockdown(boolean lockdown) { this.lockdown = lockdown; }
-    public boolean isLicensed() { return licensed && authorization != null && authorization.current(); }
+    public boolean isLicensed() { return licensed && initialized && authorization != null && authorization.current(); }
 
     // ---------------- License System ----------------
 
@@ -200,6 +200,6 @@ public class StarfinBansBungeePlugin extends Plugin {
                     catch (Exception ignored) { /* A linked installation has no pending challenge. */ }
                 }
             }
-        }, 0, 5, TimeUnit.MINUTES);
+        }, 0, 1, TimeUnit.MINUTES);
     }
 }

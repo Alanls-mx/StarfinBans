@@ -15,6 +15,9 @@ public interface PunishmentStorage {
     Punishment getActiveBan(UUID target);
     Punishment getActiveMute(UUID target);
 
+    default Punishment getActiveBanByName(String name) { return null; }
+    default Punishment getActiveMuteByName(String name) { return null; }
+
     Punishment getActiveIpBan(String ip);
     Punishment getActiveIpMute(String ip);
 

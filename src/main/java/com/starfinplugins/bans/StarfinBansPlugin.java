@@ -4,6 +4,7 @@ package com.starfinplugins.bans;
 import com.starfinplugins.bans.api.PunishmentAPI;
 import com.starfinplugins.bans.command.*;
 import com.starfinplugins.bans.listener.PunishmentListener;
+import com.starfinplugins.bans.listener.LicenseGateListener;
 import com.starfinplugins.bans.license.CoreAuthorization;
 import com.starfinplugins.bans.placeholder.StarfinBansPlaceholderExpansion;
 import com.starfinplugins.bans.service.PunishmentManager;
@@ -57,6 +58,7 @@ public class StarfinBansPlugin extends JavaPlugin {
         saveDefaultConfig();
         validateAndLoadMessages();
         registerCommands();
+        Bukkit.getPluginManager().registerEvents(new LicenseGateListener(this), this);
         corePlugin = getServer().getPluginManager().getPlugin("StarfinCore");
         if (corePlugin == null || !corePlugin.isEnabled()) logLicense("license.core-missing", Level.WARNING);
         else logLicense("license.pending", Level.INFO);
