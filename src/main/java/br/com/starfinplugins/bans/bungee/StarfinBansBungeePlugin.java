@@ -130,6 +130,7 @@ public class StarfinBansBungeePlugin extends Plugin {
 
         pm.registerCommand(this, new UnbanCommand(this));
         pm.registerCommand(this, new UnmuteCommand(this));
+        pm.registerCommand(this, new UnwarnCommand(this));
 
         pm.registerCommand(this, new HistoryCommand(this));
         pm.registerCommand(this, new CheckBanCommand(this));

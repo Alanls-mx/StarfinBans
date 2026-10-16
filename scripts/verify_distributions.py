@@ -31,7 +31,10 @@ def verify(name, platform):
 
         if platform == "Spigot":
             required = "com/starfinplugins/bans/StarfinBansPlugin.class"
-            wrong_platform_class = lambda entry: entry.startswith("br/com/starfinplugins/bans/")
+            wrong_platform_class = lambda entry: (
+                entry.startswith("br/com/starfinplugins/bans/")
+                and not entry.startswith("br/com/starfinplugins/bans/security/")
+            )
         else:
             required = "br/com/starfinplugins/bans/bungee/StarfinBansBungeePlugin.class"
             wrong_platform_class = lambda entry: (
@@ -40,6 +43,12 @@ def verify(name, platform):
             )
         if required not in entries:
             raise AssertionError(platform + " JAR contains incorrect platform classes")
+        if platform == "Bungee":
+            descriptor = archive.read("bungee.yml").decode("utf-8")
+            if "- StarfinCore" not in descriptor:
+                raise AssertionError("Bungee JAR does not require StarfinCore")
+            if "br/com/starfinplugins/bans/bungee/command/UnwarnCommand.class" not in entries:
+                raise AssertionError("Bungee JAR is missing unwarn")
         if any(
             entry.endswith(".class") and wrong_platform_class(entry)
             for entry in entries

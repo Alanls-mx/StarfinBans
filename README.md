@@ -35,13 +35,13 @@ checks do not replace testing against real Spigot, BungeeCord or MySQL servers.
 - **Spigot:** install the Spigot JAR and the compatible StarfinCore on each
   Bukkit server. StarfinBans requests authorization for product
   `starfin_bans`. PlaceholderAPI is optional. Vault is not required.
-- **BungeeCord:** install the Bungee JAR on the proxy. The current proxy
-  descriptor still depends on the legacy StarfinLicense plugin; the Bukkit
-  StarfinCore cannot be installed on BungeeCord. Do not install both JARs on
-  the same platform.
+- **BungeeCord:** install the Bungee distributions of StarfinCore and
+  StarfinBans on the proxy. StarfinBans requires Core, reads its live product
+  authorization and independently verifies the signed grant before enabling
+  punishment commands and listeners.
 
-The two adapters are still separate code packages, not a Maven common module.
-The Bungee authorization is not yet migrated to the StarfinCore contract.
+The two adapters are still separate code packages. They share a MySQL schema
+but require separate Core installation identities for the proxy and backend.
 
 ## Storage
 
@@ -82,9 +82,9 @@ adapter implements authenticated inbound administrative operations or durable
 event recovery. The existing StarfinWeb endpoint contract must be agreed and
 implemented before describing this as bidirectional synchronization.
 
-The Bungee `changereason` command and Spigot `changereason`/`unwarn` commands
-are not fully implemented. Review command behavior against the selected
-platform before production use.
+`/changereason` accepts the eight-character ID shown by `/history` or a full
+UUID. It rejects ambiguous prefixes and preserves the punishment's other
+fields. `/unwarn <player>` deactivates active warnings while preserving history.
 
 ## Backups and troubleshooting
 

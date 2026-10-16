@@ -158,12 +158,36 @@ public final class MySqlPunishmentStorage implements PunishmentStorage {
         if (name == null || name.isEmpty()) return null;
         return findOne("SELECT * FROM " + TABLE
                         + " WHERE LOWER(target_name) = LOWER(?) AND active = 1 AND type IN (?,?)"
+                        + " AND (expires < 0 OR expires > ?)"
                         + " ORDER BY created_at DESC LIMIT 1",
                 statement -> {
                     statement.setString(1, name);
                     statement.setString(2, permanent);
                     statement.setString(3, temporary);
+                    statement.setLong(4, System.currentTimeMillis());
                 });
+    }
+
+    @Override
+    public int updateReason(String idPrefix, String reason) {
+        PunishmentStorage.validateReasonChange(idPrefix, reason);
+        try (Connection connection = connection();
+             PreparedStatement find = connection.prepareStatement("SELECT id FROM " + TABLE + " WHERE id LIKE ? LIMIT 2")) {
+            find.setString(1, idPrefix + "%");
+            String id;
+            try (ResultSet rows = find.executeQuery()) {
+                if (!rows.next()) return 0;
+                id = rows.getString(1);
+                if (rows.next()) return -1;
+            }
+            try (PreparedStatement update = connection.prepareStatement("UPDATE " + TABLE + " SET reason = ? WHERE id = ?")) {
+                update.setString(1, reason);
+                update.setString(2, id);
+                return update.executeUpdate();
+            }
+        } catch (SQLException error) {
+            throw storageFailure("alterar motivo", error);
+        }
     }
 
     private Punishment findActiveByTarget(UUID target, String permanent, String temporary) {
@@ -210,11 +234,28 @@ public final class MySqlPunishmentStorage implements PunishmentStorage {
     }
 
     @Override
+    public List<Punishment> getHistoryByName(String name) {
+        if (name == null || name.isEmpty()) return Collections.emptyList();
+        return findMany("SELECT * FROM " + TABLE + " WHERE LOWER(target_name) = LOWER(?) ORDER BY created_at DESC",
+                statement -> statement.setString(1, name));
+    }
+
+    @Override
     public void expirePunishment(UUID target, PunishmentType type, UUID staff, String staffName) {
         if (target == null || type == null) return;
         executeUpdate("UPDATE " + TABLE + " SET active = 0 WHERE target = ? AND type = ? AND active = 1",
                 statement -> {
                     statement.setString(1, target.toString());
+                    statement.setString(2, type.name());
+                });
+    }
+
+    @Override
+    public void expirePunishmentByName(String name, PunishmentType type, UUID staff, String staffName) {
+        if (name == null || name.isEmpty() || type == null) return;
+        executeUpdate("UPDATE " + TABLE + " SET active = 0 WHERE LOWER(target_name) = LOWER(?) AND type = ? AND active = 1",
+                statement -> {
+                    statement.setString(1, name);
                     statement.setString(2, type.name());
                 });
     }

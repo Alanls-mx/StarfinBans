@@ -19,6 +19,15 @@ public interface PunishmentStorage {
 
     void expireAllPunishmentsByName(String targetName, UUID staff, String staffName);
 
+    /** Returns -1 for an ambiguous ID prefix, 0 when absent, or 1 when updated. */
+    int updateReason(String idPrefix, String reason);
+
+    static void validateReasonChange(String idPrefix, String reason) {
+        if (idPrefix == null || !idPrefix.matches("(?i)[0-9a-f]{8}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+                || reason == null || reason.trim().isEmpty() || reason.length() > 500)
+            throw new IllegalArgumentException("ID ou motivo invalido");
+    }
+
     Punishment getActiveIpBan(String ip);
     Punishment getActiveIpMute(String ip);
     Punishment getActiveBan(UUID target);

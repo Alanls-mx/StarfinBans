@@ -26,6 +26,8 @@ public class HelpCommand extends AbstractCommand {
         send(sender, "kick <player> <reason>", "Expulsa um jogador.");
         send(sender, "warn <player> <reason>", "Alerta um jogador.");
         send(sender, "unban/unmute <player>", "Remove punicoes.");
+        send(sender, "unwarn <player>", "Remove alertas ativos.");
+        send(sender, "changereason <id> <reason>", "Altera o motivo de uma punicao.");
         send(sender, "checkban/checkmute <player>", "Verifica punicoes ativas.");
         send(sender, "history <player>", "Ve o historico por nome.");
         send(sender, "dupeip <player/ip>", "Ve contas no mesmo IP.");

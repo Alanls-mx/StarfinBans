@@ -55,6 +55,24 @@ public class MemoryPunishmentStorageBungee implements PunishmentStorage {
     }
 
     @Override
+    public synchronized int updateReason(String idPrefix, String reason) {
+        PunishmentStorage.validateReasonChange(idPrefix, reason);
+        idPrefix = idPrefix.toLowerCase(java.util.Locale.ROOT);
+        int match = -1;
+        for (int i = 0; i < punishments.size(); i++) {
+            if (punishments.get(i).getId().toString().startsWith(idPrefix)) {
+                if (match >= 0) return -1;
+                match = i;
+            }
+        }
+        if (match < 0) return 0;
+        Punishment p = punishments.get(match);
+        punishments.set(match, new Punishment(p.getId(), p.getTarget(), p.getPlayerName(), p.getIp(),
+            p.getStaff(), p.getStaffName(), p.getType(), reason, p.getCreatedAt(), p.getExpires(), p.isActive()));
+        return 1;
+    }
+
+    @Override
     public Punishment getActiveIpBan(String ip) {
         if (ip == null || ip.isEmpty()) return null;
         for (Punishment punishment : punishments) {

@@ -170,6 +170,22 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
     }
 
     @Override
+    public synchronized List<Punishment> getHistoryByName(String name) {
+        List<Punishment> list = new ArrayList<>();
+        if (name == null || name.isEmpty()) return list;
+        try (PreparedStatement ps = connection.prepareStatement(
+                "SELECT * FROM punishments WHERE LOWER(target_name) = LOWER(?) ORDER BY created_at DESC")) {
+            ps.setString(1, name);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapPunishment(rs));
+            }
+        } catch (SQLException error) {
+            throw storageFailure("consultar histórico por nome no SQLite", error);
+        }
+        return list;
+    }
+
+    @Override
     public synchronized void expirePunishment(UUID target, PunishmentType type, UUID staff, String staffName) {
         // Desativa punições ativas desse tipo para o alvo
         String sql = "UPDATE punishments SET active = 0 WHERE target = ? AND type = ? AND active = 1";
@@ -179,6 +195,40 @@ public class SQLitePunishmentStorage implements PunishmentStorage {
             ps.executeUpdate();
         } catch (SQLException e) {
             throw storageFailure("revogar punição no SQLite", e);
+        }
+    }
+
+    @Override
+    public synchronized void expirePunishmentByName(String name, PunishmentType type, UUID staff, String staffName) {
+        if (name == null || name.isEmpty() || type == null) return;
+        try (PreparedStatement ps = connection.prepareStatement(
+                "UPDATE punishments SET active = 0 WHERE LOWER(target_name) = LOWER(?) AND type = ? AND active = 1")) {
+            ps.setString(1, name);
+            ps.setString(2, type.name());
+            ps.executeUpdate();
+        } catch (SQLException error) {
+            throw storageFailure("revogar punição por nome no SQLite", error);
+        }
+    }
+
+    @Override
+    public synchronized int updateReason(String idPrefix, String reason) {
+        PunishmentStorage.validateReasonChange(idPrefix, reason);
+        try (PreparedStatement find = connection.prepareStatement("SELECT id FROM punishments WHERE id LIKE ? LIMIT 2")) {
+            find.setString(1, idPrefix + "%");
+            String id;
+            try (ResultSet rows = find.executeQuery()) {
+                if (!rows.next()) return 0;
+                id = rows.getString(1);
+                if (rows.next()) return -1;
+            }
+            try (PreparedStatement update = connection.prepareStatement("UPDATE punishments SET reason = ? WHERE id = ?")) {
+                update.setString(1, reason);
+                update.setString(2, id);
+                return update.executeUpdate();
+            }
+        } catch (SQLException error) {
+            throw storageFailure("alterar motivo no SQLite", error);
         }
     }
 

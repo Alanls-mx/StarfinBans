@@ -29,6 +29,7 @@ public class HelpCommand implements CommandExecutor {
         sendHelp(sender, "kick <player> <reason>", "Expulsa um jogador.");
         sendHelp(sender, "warn <player> <reason>", "Alerta um jogador.");
         sendHelp(sender, "unban/unmute <player>", "Remove punicoes.");
+        sendHelp(sender, "unwarn <player>", "Remove alertas ativos.");
         sendHelp(sender, "check <ban/mute> <player>", "Verifica punicoes ativas.");
         sendHelp(sender, "history <player>", "Ve o historico de punicoes.");
         sendHelp(sender, "changereason <id> <reason>", "Altera o motivo de uma punicao.");

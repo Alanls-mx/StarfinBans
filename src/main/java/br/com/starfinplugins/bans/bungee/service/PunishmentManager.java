@@ -50,6 +50,7 @@ public class PunishmentManager implements PunishmentAPI {
         );
 
         ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
+            if (!plugin.isLicensed()) return;
             storage.createPunishment(p);
             web.sendCreate(p);
         });
@@ -58,6 +59,7 @@ public class PunishmentManager implements PunishmentAPI {
     @Override
     public void unban(UUID target, UUID staff, String staffName) {
         ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
+            if (!plugin.isLicensed()) return;
             List<Punishment> history = storage.getHistory(target);
             expireByUuid(target, history, true, staff, staffName);
         });
@@ -66,12 +68,13 @@ public class PunishmentManager implements PunishmentAPI {
     @Override
     public void unbanByName(String targetName, UUID staff, String staffName) {
         ProxyServer.getInstance().getScheduler().runAsync(plugin,
-                () -> expireByName(targetName, true, staff, staffName));
+                () -> { if (plugin.isLicensed()) expireByName(targetName, true, staff, staffName); });
     }
 
     @Override
     public void unmute(UUID target, UUID staff, String staffName) {
         ProxyServer.getInstance().getScheduler().runAsync(plugin, () -> {
+            if (!plugin.isLicensed()) return;
             List<Punishment> history = storage.getHistory(target);
             expireByUuid(target, history, false, staff, staffName);
         });
@@ -80,7 +83,7 @@ public class PunishmentManager implements PunishmentAPI {
     @Override
     public void unmuteByName(String targetName, UUID staff, String staffName) {
         ProxyServer.getInstance().getScheduler().runAsync(plugin,
-                () -> expireByName(targetName, false, staff, staffName));
+                () -> { if (plugin.isLicensed()) expireByName(targetName, false, staff, staffName); });
     }
 
     private void expireByName(String targetName, boolean ban, UUID staff, String staffName) {

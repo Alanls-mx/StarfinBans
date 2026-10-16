@@ -164,6 +164,28 @@ public final class MySqlPunishmentStorageBungee implements PunishmentStorage, Du
     }
 
     @Override
+    public int updateReason(String idPrefix, String reason) {
+        PunishmentStorage.validateReasonChange(idPrefix, reason);
+        try (Connection connection = connection();
+             PreparedStatement find = connection.prepareStatement("SELECT id FROM " + TABLE + " WHERE id LIKE ? LIMIT 2")) {
+            find.setString(1, idPrefix + "%");
+            String id;
+            try (ResultSet rows = find.executeQuery()) {
+                if (!rows.next()) return 0;
+                id = rows.getString(1);
+                if (rows.next()) return -1;
+            }
+            try (PreparedStatement update = connection.prepareStatement("UPDATE " + TABLE + " SET reason = ? WHERE id = ?")) {
+                update.setString(1, reason);
+                update.setString(2, id);
+                return update.executeUpdate();
+            }
+        } catch (SQLException error) {
+            throw storageFailure("alterar motivo", error);
+        }
+    }
+
+    @Override
     public Punishment getActiveBan(UUID target) {
         return findActiveByUuid(target, "BAN_PERMANENT", "BAN_TEMPORARY");
     }
