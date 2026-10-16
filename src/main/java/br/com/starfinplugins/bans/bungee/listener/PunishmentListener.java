@@ -27,10 +27,36 @@ public class PunishmentListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onLogin(LoginEvent event) {
+        if (!plugin.isLicensed()) return;
         String name = event.getConnection().getName();
         String ip = event.getConnection().getAddress().getAddress().getHostAddress();
         UUID uuid = event.getConnection().getUniqueId();
+        event.registerIntent(plugin);
+        try {
+            plugin.getProxy().getScheduler().runAsync(plugin, () -> {
+                try {
+                    checkLogin(event, name, ip, uuid);
+                } catch (RuntimeException error) {
+                    plugin.getLogger().log(Level.SEVERE, "Falha ao verificar o login; conexao recusada.", error);
+                    event.setCancelled(true);
+                    event.setCancelReason("Nao foi possivel verificar sua punicao no momento. Tente novamente mais tarde.");
+                } finally {
+                    event.completeIntent(plugin);
+                }
+            });
+        } catch (RuntimeException error) {
+            event.setCancelled(true);
+            event.setCancelReason("Verificacao de punicao indisponivel. Tente novamente mais tarde.");
+            event.completeIntent(plugin);
+        }
+    }
 
+    private void checkLogin(LoginEvent event, String name, String ip, UUID uuid) {
+        if (!plugin.isLicensed()) {
+            event.setCancelled(true);
+            event.setCancelReason("Autorizacao de moderacao indisponivel. Tente novamente mais tarde.");
+            return;
+        }
         Punishment ban;
         try {
             ban = uuid != null ? plugin.getStorage().getActiveBan(uuid) : null;
